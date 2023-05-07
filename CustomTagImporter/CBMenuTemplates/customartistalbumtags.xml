@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<custombrowse>
+	<requireplugins>CustomTagImporter</requireplugins>
+	<template>
+		<name>Artists - Custom Artist Album Tags</name>
+		<description>Menu to browse your artists and albums by a custom tag. The artist is selected first, then the album and finally the custom tag (e.g. ORIGARTIST).</description>
+		<parameter type="text" id="menuname" name="Menu name" value="Custom Artist Album Tags"/>
+		<parameter type="text" id="menugroup" name="Menu group" value=""/>
+		<parameter type="text" id="menuorder" name="Menu sort order (1-100)" value="50"/>
+		<parameter type="checkboxes" id="roles" name="Roles to include" value="0" data="1=Artist,2=Composer,3=Conductor,4=Band,5=Album artist,6=Track artist"/>
+		<parameter type="checkbox" id="variousartists" name="Various Artists section" value="1"/>
+		<parameter type="text" id="variousartisttext" name="Various Artists name" value="Various Artists"/>
+		<parameter type="text" id="customtag" name="Tag name" value="ORIGARTIST"/>
+		<parameter type="text" id="customtagtext" name="User friendly name of tag" value="Orig Artists"/>
+		<parameter type="text" id="customsorttag" name="Sort tag name" value=""/>
+		<parameter type="checkbox" id="customtagartistsort" name="Sort by ARTISTSORT" value=""/>
+		<parameter type="checkbox" id="playalltracks" name="Play all songs in selected album" value="1"/>
+		<parameter type="sqloptionalsinglelist" id="library" requireplugins="MultiLibrary::Plugin" name="Library" value="" data="select id,name,id from multilibrary_libraries"/>
+		<parameter type="checkbox" id="activelibrary" requireplugins="MultiLibrary::Plugin" name="Limit to active library" value=""/>
+		<parameter type="text" id="includedclients" name="Only include on these players (empty = all)" value=""/>
+		<parameter type="text" id="excludedclients" name="Exclude from these players" value=""/>
+		<parameter type="sqloptionalmultiplelist" id="includedlibraries" requireplugins="MultiLibrary::Plugin" name="Only include when these libraries are active (empty = all)" value="" data="select id,name,id from multilibrary_libraries"/>
+		<parameter type="sqloptionalmultiplelist" id="excludedlibraries" requireplugins="MultiLibrary::Plugin" name="Exclude when these libraries are active" value="" data="select id,name,id from multilibrary_libraries"/>
+	</template>
+</custombrowse>
+

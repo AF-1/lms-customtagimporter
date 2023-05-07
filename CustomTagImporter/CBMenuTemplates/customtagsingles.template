@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<custombrowse>
+	<menu>
+		[%- IF includedclients %]<includedclients>[% includedclients %]</includedclients>[% END %]
+		[%- IF excludedclients %]<excludedclients>[% excludedclients %]</excludedclients>[% END %]
+		[%- IF includedlibraries %]<includedlibraries>[% includedlibraries %]</includedlibraries>[% END %]
+		[%- IF excludedlibraries %]<excludedlibraries>[% excludedlibraries %]</excludedlibraries>[% END %]
+		[% IF menugroup %]<menugroup>[% menugroup %]</menugroup>[% END %]
+		<menuname>[% menuname %]</menuname>
+		[% IF menuorder %]<menuorder>[% menuorder %]</menuorder>[% END %]
+		<menu>
+			<id>artist</id>
+			<menuname>[% IF usetagasalbum and customtag and !customtagvalue %]Singles[% ELSE %]Songs[% END %]</menuname>
+			<itemtype>artist</itemtype>
+				<menutype>sql</menutype>
+			<menulinks>alpha</menulinks>
+			<playtype>sql</playtype>
+			<playdata>
+				select tracks.id, tracks.title from tracks,contributor_track[% IF singlecomment %],comments[% END %][% IF customtag %],customtagimporter_track_attributes[% END %][% IF library or activelibrary %],multilibrary_track[% END %]
+				where
+					[%- IF library or activelibrary %]
+					tracks.id=multilibrary_track.track and
+					multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %] and
+					[%- END %]
+					[%- IF lossless %]
+					tracks.lossless=1 and
+					[%- END %]
+					contributor_track.track=tracks.id and
+					contributor_track.role in ([% IF roles %][% roles %][% ELSE %]1,5[% END %]) and
+					contributor_track.contributor={artist} and
+					tracks.audio=1
+					[%- IF singlecomment %]
+					and comments.track=tracks.id and
+					[%- IF containssinglecomment %]
+					comments.value like '%[% singlecomment %]%'
+					[% ELSE %]
+					comments.value='[% singlecomment %]'
+					[%- END %]
+					[%- END %]
+					[%- IF customtag %]
+					and tracks.id=customtagimporter_track_attributes.track and
+					customtagimporter_track_attributes.type='customtag' and
+					customtagimporter_track_attributes.attr='[% customtag %]'
+					[% IF customtagvalue %]and customtagimporter_track_attributes.value='[% customtagvalue %]'[% END %]
+					[%- END %]
+				group by tracks.id
+				order by [% RANDOMFUNCTION %]
+						</playdata>
+				<menudata>
+				select distinct contributors.id,contributors.name,substr(contributors.namesort,1,1) from contributors,contributor_track,tracks[% IF library or activelibrary %],multilibrary_track[% END %]
+				[%- IF singlecomment %]
+				,comments
+				[%- END %]
+				[%- IF customtag %]
+				,customtagimporter_track_attributes
+				[%- END %]
+								where
+					[%- IF library or activelibrary %]
+					tracks.id=multilibrary_track.track and
+					multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %] and
+					[%- END %]
+					[%- IF lossless %]
+					tracks.lossless=1 and
+					[%- END %]
+										contributors.id=contributor_track.contributor and
+										contributor_track.track=tracks.id and
+										contributor_track.role in ([% IF roles %][% roles %][% ELSE %]1,5[% END %]) and
+					tracks.audio=1
+					[%- IF singlecomment %]
+					and comments.track=tracks.id and
+					[%- IF containssinglecomment %]
+					comments.value like '%[% singlecomment %]%'
+					[% ELSE %]
+					comments.value='[% singlecomment %]'
+					[%- END %]
+					[%- END %]
+					[%- IF customtag %]
+					and tracks.id=customtagimporter_track_attributes.track
+					and customtagimporter_track_attributes.type='customtag'
+					and customtagimporter_track_attributes.attr='[% customtag %]'
+					[% IF customtagvalue %]and customtagimporter_track_attributes.value='[% customtagvalue %]'[% END %]
+					[%- END %]
+								group by contributors.id
+								order by contributors.namesort asc
+			</menudata>
+			[%- IF usetagasalbum and customtag and !customtagvalue %]
+			<menu>
+				<id>album</id>
+				<menuname>Songs</menuname>
+				<pathtype>sql</pathtype>
+				<pathtypedata>
+					select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+							where
+								type='customtag' and
+								attr='[% customtag %]' and
+								value='{context.itemid}'
+				</pathtypedata>
+					<menutype>sql</menutype>
+				<menulinks>alpha</menulinks>
+				<playtype>sql</playtype>
+				<playdata>
+					select tracks.id, tracks.title from tracks,contributor_track[% IF singlecomment %],comments[% END %],customtagimporter_track_attributes[% IF library or activelibrary %],multilibrary_track[% END %]
+					where
+						[%- IF library or activelibrary %]
+						tracks.id=multilibrary_track.track and
+						multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %] and
+						[%- END %]
+						[%- IF lossless %]
+						tracks.lossless=1 and
+						[%- END %]
+						contributor_track.track=tracks.id and
+						contributor_track.role in ([% IF roles %][% roles %][% ELSE %]1,5[% END %]) and
+						contributor_track.contributor={artist} and
+						tracks.audio=1
+						[%- IF singlecomment %]
+						and comments.track=tracks.id and
+						[%- IF containssinglecomment %]
+						comments.value like '%[% singlecomment %]%'
+						[% ELSE %]
+						comments.value='[% singlecomment %]'
+						[%- END %]
+						[%- END %]
+						and tracks.id=customtagimporter_track_attributes.track and
+						customtagimporter_track_attributes.type='customtag' and
+						customtagimporter_track_attributes.attr='[% customtag %]' and
+						customtagimporter_track_attributes.value='{album}'
+					group by tracks.id
+					order by [% RANDOMFUNCTION %]
+							</playdata>
+				<customitemtype>customtag[% customtag %]</customitemtype>
+					<menudata>
+					select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.value,1,1) from contributors,contributor_track,tracks,customtagimporter_track_attributes[% IF library or activelibrary %],multilibrary_track[% END %]
+					[%- IF singlecomment %]
+					,comments
+					[%- END %]
+									where
+						[%- IF library or activelibrary %]
+						tracks.id=multilibrary_track.track and
+						multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %] and
+						[%- END %]
+						[%- IF lossless %]
+						tracks.lossless=1 and
+						[%- END %]
+											contributors.id=contributor_track.contributor and
+											contributor_track.track=tracks.id and
+											contributor_track.role in ([% IF roles %][% roles %][% ELSE %]1,5[% END %]) and
+						tracks.audio=1
+						[%- IF singlecomment %]
+						and comments.track=tracks.id and
+						[%- IF containssinglecomment %]
+						comments.value like '%[% singlecomment %]%'
+						[% ELSE %]
+						comments.value='[% singlecomment %]'
+						[%- END %]
+						[%- END %]
+						and tracks.id=customtagimporter_track_attributes.track
+						and customtagimporter_track_attributes.type='customtag'
+						and customtagimporter_track_attributes.attr='[% customtag %]'
+									group by customtagimporter_track_attributes.value
+									order by customtagimporter_track_attributes.value asc
+				</menudata>
+				[%- END %]
+				<menu>
+					<id>track</id>
+					<menuname>Songs</menuname>
+					<itemtype>track</itemtype>
+					[%- IF usetitleformat %]
+					<itemformat>titleformat</itemformat>
+					<itemformatdata>[% usetitleformat %]</itemformatdata>
+					[%- ELSE %]
+					<itemformat>track</itemformat>
+					[%- END %]
+					[%- IF defaulttitlesort %]<defaultoption>[% defaulttitlesort %]</defaultoption>[% END %]
+					<option>
+						<id>bytitle</id>
+						<name>Sort by title</name>
+						<menulinks>alpha</menulinks>
+						<keyword name="orderby" value="tracks.titlesort asc"/>
+					</option>
+					<option>
+						<id>bydisc</id>
+						<name>Sort by disc</name>
+						<menulinks>number</menulinks>
+						<keyword name="orderby" value="tracks.disc,tracks.titlesort asc"/>
+					</option>
+					<menutype>sql</menutype>
+					<menudata>
+						select tracks.id,tracks.title from contributor_track,tracks[% IF singlecomment %],comments[% END %][% IF customtag %],customtagimporter_track_attributes[% END %][% IF library or activelibrary %],multilibrary_track[% END %]
+						where
+							[%- IF library or activelibrary %]
+							tracks.id=multilibrary_track.track and
+							multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %] and
+							[%- END %]
+							[%- IF lossless %]
+							tracks.lossless=1 and
+							[%- END %]
+							tracks.id=contributor_track.track and
+							contributor_track.role in ([% IF roles %][% roles %][% ELSE %]1,5[% END %]) and
+							contributor_track.contributor={artist} and
+							tracks.audio=1
+							[%- IF singlecomment %]
+							and comments.track=tracks.id and
+							[%- IF containssinglecomment %]
+							comments.value like '%[% singlecomment %]%'
+							[% ELSE %]
+							comments.value='[% singlecomment %]'
+							[%- END %]
+							[%- END %]
+							[%- IF customtag %]
+							and tracks.id=customtagimporter_track_attributes.track
+							and customtagimporter_track_attributes.type='customtag'
+							and customtagimporter_track_attributes.attr='[% customtag %]'
+							[% IF customtagvalue %]and customtagimporter_track_attributes.value='[% customtagvalue %]'[% END %]
+							[% IF usetagasalbum and customtag and !customtagvalue %]and customtagimporter_track_attributes.value='{album}'[% END %]
+							[%- END %]
+						group by tracks.id
+						order by {orderby}
+					</menudata>
+					<menu>
+						<id>trackdetails</id>
+						<menutype>trackdetails</menutype>
+						<menudata>track|0[% IF activelibrary %]|library={clientproperty:plugin.multilibrary:activelibraryno}[% ELSIF library %]|library=[% library %][% END %]</menudata>
+					</menu>
+				</menu>
+			[%- IF usetagasalbum %]
+			</menu>
+			[%- END %]
+		</menu>
+	</menu>
+</custombrowse>

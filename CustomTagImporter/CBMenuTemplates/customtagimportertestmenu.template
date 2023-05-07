@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<custombrowse>
+	<menu>
+		[%- IF includedclients %]<includedclients>[% includedclients %]</includedclients>[% END %]
+		[%- IF excludedclients %]<excludedclients>[% excludedclients %]</excludedclients>[% END %]
+		[% IF menugroup %]<menugroup>[% menugroup %]</menugroup>[% END %]
+		<menuname>[% menuname %]</menuname>
+		[% IF menuorder %]<menuorder>[% menuorder %]</menuorder>[% END %]
+		<playtype>none</playtype>
+		<menu>
+			<id>tracktype</id>
+			<menuname>Attributes</menuname>
+			<playtype>none</playtype>
+			<menutype>sql</menutype>
+			<menudata>
+				select customtagimporter_track_attributes.type,customtagimporter_track_attributes.type from customtagimporter_track_attributes
+				group by customtagimporter_track_attributes.type
+				order by customtagimporter_track_attributes.type asc
+			</menudata>
+			<menu>
+				<id>attribute</id>
+				<menuname>Artists</menuname>
+				<playtype>none</playtype>
+				<menutype>sql</menutype>
+				<menudata>
+					select customtagimporter_track_attributes.attr,customtagimporter_track_attributes.attr from customtagimporter_track_attributes
+					where
+						customtagimporter_track_attributes.type='{tracktype}'
+					group by customtagimporter_track_attributes.attr
+					order by customtagimporter_track_attributes.attr asc
+				</menudata>
+				<menu>
+					<id>artist</id>
+					<menuname>Albums</menuname>
+					<itemtype>artist</itemtype>
+					<menutype>sql</menutype>
+					<menulinks>alpha</menulinks>
+					<menudata>
+						select contributors.id,contributors.name,substr(contributors.namesort,1,1) from contributors,customtagimporter_track_attributes,tracks,contributor_track
+						where
+							tracks.audio=1 and
+							tracks.id=contributor_track.track and
+							contributor_track.contributor=contributors.id and
+							tracks.id=customtagimporter_track_attributes.track and
+							customtagimporter_track_attributes.type='{tracktype}' and
+							customtagimporter_track_attributes.attr='{attribute}'
+						group by contributors.id
+						order by contributors.namesort asc
+					</menudata>
+					<menu>
+						<id>album</id>
+						<menuname>Songs</menuname>
+						<itemtype>album</itemtype>
+						<menutype>sql</menutype>
+						<menulinks>alpha</menulinks>
+						<menudata>
+							select albums.id,albums.title,substr(albums.titlesort,1,1) from albums,customtagimporter_track_attributes,tracks,contributor_track
+							where
+								tracks.audio=1 and
+								tracks.id=contributor_track.track and
+								contributor_track.contributor={artist} and
+								tracks.id=customtagimporter_track_attributes.track and
+								tracks.album=albums.id and
+								customtagimporter_track_attributes.type='{tracktype}' and
+								customtagimporter_track_attributes.attr='{attribute}'
+							group by albums.id
+							order by albums.titlesort asc,albums.disc asc
+						</menudata>
+						<menu>
+							<id>track</id>
+							<menuname>Values</menuname>
+							<itemtype>track</itemtype>
+							<menutype>sql</menutype>
+							<menudata>
+								select tracks.id,tracks.tracknum || '. ' || tracks.title from albums,customtagimporter_track_attributes,tracks,contributor_track
+								where
+									tracks.audio=1 and
+									tracks.id=contributor_track.track and
+									contributor_track.contributor={artist} and
+									tracks.id=customtagimporter_track_attributes.track and
+									tracks.album={album} and
+									customtagimporter_track_attributes.type='{tracktype}' and
+									customtagimporter_track_attributes.attr='{attribute}'
+								group by tracks.id
+								order by tracks.disc,tracks.tracknum,tracks.titlesort asc
+							</menudata>
+							<menu>
+								<id>value</id>
+								<playtype>none</playtype>
+								<menutype>sql</menutype>
+								<menudata>
+									select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+									where
+										customtagimporter_track_attributes.type='{tracktype}' and
+										customtagimporter_track_attributes.attr='{attribute}' and
+										customtagimporter_track_attributes.track={track}
+									group by customtagimporter_track_attributes.value
+									order by customtagimporter_track_attributes.value asc
+								</menudata>
+							</menu>
+						</menu>
+					</menu>
+				</menu>
+			</menu>
+		</menu>
+	</menu>
+</custombrowse>

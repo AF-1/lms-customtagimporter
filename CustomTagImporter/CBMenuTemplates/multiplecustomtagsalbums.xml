@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<custombrowse>
+	<requireplugins>CustomTagImporter</requireplugins>
+	<template>
+		<name>Albums - Custom Multiple Tags Albums</name>
+		<description>Menu to browse your albums by multiple custom tags (e.g. CONDUCTOR, WORK, ENSEMBLE).</description>
+		<parameter type="text" id="menuname" name="Menu name" value="Custom Multiple Tags Albums"/>
+		<parameter type="text" id="menugroup" name="Menu group" value=""/>
+		<parameter type="text" id="menuorder" name="Menu sort order (1-100)" value="50"/>
+		<parameter type="checkbox" id="limituppertags" name="Limit upper levels to those with existing lower levels" value="1"/>
+		<parameter type="checkboxes" id="roles" name="Roles to include" value="0" data="1=Artist,2=Composer,3=Conductor,4=Band,5=Album artist,6=Track artist"/>
+		<parameter type="checkbox" id="showartistwithalbum" name="Show artist with album" value=""/>
+		<parameter type="text" id="customtag1" name="Level 1 tag name" value="OWNER"/>
+		<parameter type="text" id="customsorttag1" name="Level 1 sort tag name" value=""/>
+		<parameter type="checkbox" id="customtag1artistsort" name="Level 1 sort by ARTISTSORT" value=""/>
+		<parameter type="checkbox" id="customtag1numbersort" name="Level 1 sort numeric" value=""/>
+		<parameter type="text" id="customtag2" name="Level 2 tag name" value=""/>
+		<parameter type="text" id="level2name" name="Level 2 name" value=""/>
+		<parameter type="text" id="customsorttag2" name="Level 2 sort tag name" value=""/>
+		<parameter type="checkbox" id="customtag2artistsort" name="Level 2 sort by ARTISTSORT" value=""/>
+		<parameter type="checkbox" id="customtag2numbersort" name="Level 2 sort numeric" value=""/>
+		<parameter type="text" id="customtag3" name="Level 3 tag name" value=""/>
+		<parameter type="text" id="level3name" name="Level 3 name" value=""/>
+		<parameter type="text" id="customsorttag3" name="Level 3 sort tag name" value=""/>
+		<parameter type="checkbox" id="customtag3artistsort" name="Level 3 sort by ARTISTSORT" value=""/>
+		<parameter type="checkbox" id="customtag3numbersort" name="Level 3 sort numeric" value=""/>
+		<parameter type="text" id="customtag4" name="Level 4 tag name" value=""/>
+		<parameter type="text" id="level4name" name="Level 4 name" value=""/>
+		<parameter type="text" id="customsorttag4" name="Level 4 sort tag name" value=""/>
+		<parameter type="checkbox" id="customtag4artistsort" name="Level 4 sort by ARTISTSORT" value=""/>
+		<parameter type="checkbox" id="customtag4numbersort" name="Level 4 sort numeric" value=""/>
+		<parameter type="text" id="customtag5" name="Level 5 tag name" value=""/>
+		<parameter type="text" id="level5name" name="Level 5 name" value=""/>
+		<parameter type="text" id="customsorttag5" name="Level 5 sort tag name" value=""/>
+		<parameter type="checkbox" id="customtag5artistsort" name="Level 5 sort by ARTISTSORT" value=""/>
+		<parameter type="checkbox" id="customtag5numbersort" name="Level 5 sort numeric" value=""/>
+		<parameter type="checkbox" id="playalltracks" name="Play all songs in selected album" value="1"/>
+		<parameter type="sqloptionalsinglelist" id="library" requireplugins="MultiLibrary::Plugin" name="Library" value="" data="select id,name,id from multilibrary_libraries"/>
+		<parameter type="checkbox" id="activelibrary" requireplugins="MultiLibrary::Plugin" name="Limit to active library" value=""/>
+		<parameter type="text" id="includedclients" name="Only include on these players (empty = all)" value=""/>
+		<parameter type="text" id="excludedclients" name="Exclude from these players" value=""/>
+		<parameter type="sqloptionalmultiplelist" id="includedlibraries" requireplugins="MultiLibrary::Plugin" name="Only include when these libraries are active (empty = all)" value="" data="select id,name,id from multilibrary_libraries"/>
+		<parameter type="sqloptionalmultiplelist" id="excludedlibraries" requireplugins="MultiLibrary::Plugin" name="Exclude when these libraries are active" value="" data="select id,name,id from multilibrary_libraries"/>
+	</template>
+</custombrowse>
+

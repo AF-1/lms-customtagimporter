@@ -1,0 +1,107 @@
+PLUGIN_CUSTOMTAGIMPORTER
+	EN	Custom Tag Importer
+
+PLUGIN_CUSTOMTAGIMPORTER_DESC
+	EN	Custom Tag Importer scans track information from custom tags in your music files (incl. rating tags). More information on the GitHub page.
+
+PLUGIN_CUSTOMTAGIMPORTER_LOG_DESC
+	EN	Log of plugin CustomTagImporter
+
+PLUGIN_CUSTOMTAGIMPORTER_GITHUB_LINK_TEXT
+	EN	Click here for more information.
+
+PLUGIN_CUSTOMTAGIMPORTER_GITHUB_LINK
+	EN	https://github.com/AF-1/lms-customtagimporter#customtagimporter
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS
+	EN	Custom Tags
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGSTOSCAN
+	EN	Names of custom tags to scan
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGSTOSCAN_DESC
+	EN	<b>Comma</b> separated list of <b>all</b> custom tags you want scanned
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_SINGLECUSTOMTAGS
+	EN	Single value tags
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_SINGLECUSTOMTAGS_DESC
+	EN	<b>Comma</b> separated list of scanned tags that will <b>not be split into multiple values</b> separated by <b>;</b><br>These tags must also be added to "Names of custom tags to scan" field above to be included in the scan.<br><br><b>Rating</b> tags can be specified separately in the "Names of rating tags to scan" field below.
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TITLEFORMATS
+	EN	Title formats
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TITLEFORMATS_DESC
+	EN	Select the custom tags you want to make available as title formats
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGSMAPPING
+	EN	Tag mapping
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGSMAPPING_DESC
+	EN	<b>Comma</b> separated list of the tags that should be mapped to other tags.<br><br>For more information and examples see the <a href="https://github.com/AF-1/lms-customtagimporter/wiki">GitHub wiki pages</a>.
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_SORTTAGMAPPING
+	EN	Sort tag mapping
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_SORTTAGMAPPING_DESC
+	EN	<b>Comma</b> separated list of the tags and their corresponding sort tags<br><br><i>Examples:</i><br>ORIGARTIST = ORIGARTISTSORT<br>OWNER = OWNERSORT<br><br>Only useful if a scanned tag is different from its sort tag, i.e. you have a dedicated sort tag (e.g. OWNER<b>SORT</b>) for a scanned tag (e.g. OWNER).
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_RAWMP3TAGS
+	EN	Use raw MP3 tags
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_RAWMP3TAGS_DESC
+	EN	If your MP3 files have tags that CTI does not pick up by default, using raw encoding of MP3 tags <b>might</b> find more tags (success not guaranteed). The scanning process will take longer then.<br>So best to use only if absolutely necessary.
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_DUMPTAGNAMES
+	EN	Dump found tag names to file
+
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_DUMPTAGNAMES_DESC
+	EN	This writes the <b>names</b> of the tags found during the scan to a file in the LMS playlist folder.<br>A simple way to get an overview of which tags are included in the scanned files. Nevertheless, I cannot guarantee completeness.<br><br>If the <b>debug level</b> of this plugin in the LMS <i>Logging</i> settings is set to <b>debug</b>, this will write <b>all</b> tag <i>names</i> <b>and</b> <i>values</i> to the <b>server log</b>, not to a file. Depending on the size of your library, the server log file could grow to several MB in size.<br><br><b>These options are <b>only available for <i>manually</i> initiated</b> scans, <b>not for automatic scans</b> after an LMS rescan.
+
+PLUGIN_CUSTOMTAGIMPORTER_AUTO_RESCAN
+	EN	Automatic rescan
+
+PLUGIN_CUSTOMTAGIMPORTER_AUTO_RESCAN_DESC
+	EN	Automatically rescan tags after an LMS rescan.<br>After an LMS rescan tracks have new track IDs which invalidates the link to CTI database table. Therefore you need to rescan your custom/rating tags. You can either do it manually or have LMS do it for you automatically as part of the LMS rescan.
+
+PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS
+	EN	Rating Tags
+
+PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_TAGSTOSCAN
+	EN	Names of rating tags to scan
+
+PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_TAGSTOSCAN_DESC
+	EN	The name of the <b>rating tags</b> to read ratings from. Can be multiple tags separated by a <b>comma</b>.<br><br><b>Please note:</b> If you don't enter a rating tag name, CTI will <b>not</b> scan for rating tags.<br>Rating tag names don't have to be added to the <i>Names of custom tags to scan</i> field.
+
+PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_MAXVAL
+	EN	Max rating value
+
+PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_MAXVAL_DESC
+	EN	Enter the maximum rating value in the scanned rating tags. This is used to convert the rating to a value between 0-100 to be stored in the LMS database.
+
+PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_WRITETOLMSDB
+	EN	Use&nbsp;CTI&nbsp;rating&nbsp;values&nbsp;to set&nbsp;LMS&nbsp;track&nbsp;ratings
+
+PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_WRITETOLMSDB_DESC
+	EN	Previous LMS rating values will be <b>deleted and replaced</b> by CTI rating values.<br>If you're using the <i>Ratings Light</i> plugin, you may want to create a backup before starting the CTI scanning process. The scanned CTI rating values are also stored in the CTI database table.
+
+PLUGIN_CUSTOMTAGIMPORTER_SCANNING
+	EN	Scan tags
+
+PLUGIN_CUSTOMTAGIMPORTER_SCANNING_DESC
+	EN	This deletes the current CTI database table and rescans <b>all</b> of your tracks for custom and rating tags. This may take a while depending on the size of your library.<br><br>The <b>Abort</b> button will cancel the current scanning process.<br><br>The <b>Reset ratings to CTI values</b> button will reset all LMS track ratings to the <b>current</b> <i>rating</i> tag values of the CTI database table - without the need for another rescan. If there are no CTI rating tag values, the button is not displayed.
+
+PLUGIN_CUSTOMTAGIMPORTER_SCANNING_SCAN_BUTTON
+	EN	Scan now
+
+PLUGIN_CUSTOMTAGIMPORTER_SCANNING_ABORT_BUTTON
+	EN	Abort
+
+PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_RESETLMSDBTOCTIVALUES
+	EN	Reset ratings to CTI values
+
+PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_RESETLMSDBTOCTIVALUES_INPROGRESS
+	EN	Resetting...
+
+PLUGIN_CUSTOMTAGIMPORTER_LMSSCANINPROGRESS
+	EN	Active LMS scan detected. Manual CTI scanning is disabled until the LMS scan is completed.

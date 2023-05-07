@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<custombrowse>
+	<menu>
+		[%- IF includedclients %]<includedclients>[% includedclients %]</includedclients>[% END %]
+		[%- IF excludedclients %]<excludedclients>[% excludedclients %]</excludedclients>[% END %]
+		[%- IF includedlibraries %]<includedlibraries>[% includedlibraries %]</includedlibraries>[% END %]
+		[%- IF excludedlibraries %]<excludedlibraries>[% excludedlibraries %]</excludedlibraries>[% END %]
+		[% IF menugroup %]<menugroup>[% menugroup %]</menugroup>[% END %]
+		<menuname>[% menuname %]</menuname>
+		[% IF menuorder %]<menuorder>[% menuorder %]</menuorder>[% END %]
+		<menu>
+			<id>customtag</id>
+			<menuname>Songs</menuname>
+			<pathtype>sql</pathtype>
+			<pathtypedata>
+				select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+						where
+							type='customtag' and
+							attr='[% customtag %]' and
+							value='{context.itemid}'
+			</pathtypedata>
+			<customitemtype>customtag[% customtag %]</customitemtype>
+			<menutype>sql</menutype>
+			<menulinks>alpha</menulinks>
+			<menudata>
+				select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,
+					[%- IF customsorttag %]
+					[%- IF customtagartistsort %]
+					substr(ifnull(contributors.namesort,ifnull(attr2.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))),1,1)
+					[%- ELSE %]
+					substr(ifnull(attr2.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)),1,1)
+					[%- END %]
+					[%- ELSIF customtagartistsort %]
+					substr(ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)),1,1)
+					[%- ELSE %]
+					substr(ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value),1,1)
+					[%- END %]
+					from customtagimporter_track_attributes
+				[%- IF library or activelibrary %]
+				join multilibrary_track on
+					customtagimporter_track_attributes.track=multilibrary_track.track and
+					multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+				[%- END %]
+				[%- IF customsorttag %]
+				left join customtagimporter_track_attributes as attr2 on
+					customtagimporter_track_attributes.track=attr2.track and
+					attr2.type='customtag' and
+					attr2.attr='[% customsorttag %]'
+				[%- END %]
+				[%- IF customtagartistsort %]
+				left join contributors on
+					customtagimporter_track_attributes.value=contributors.name
+				[%- END %]
+				where
+					customtagimporter_track_attributes.type='customtag' and
+					customtagimporter_track_attributes.attr='[% customtag %]'
+				group by customtagimporter_track_attributes.value
+				[%- IF customsorttag %]
+				[%- IF customtagartistsort %]
+				order by ifnull(contributors.namesort,ifnull(attr2.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)))[%- IF customtagreversesort -%] desc[%- ELSE -%] asc[%- END -%]
+				[%- ELSE %]
+				order by ifnull(attr2.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))[%- IF customtagreversesort -%] desc[%- ELSE -%] asc[%- END -%]
+				[%- END %]
+				[%- ELSIF customtagartistsort %]
+				order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))[%- IF customtagreversesort -%] desc[%- ELSE -%] asc[%- END -%]
+				[%- ELSE %]
+				order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)[%- IF customtagreversesort -%] desc[%- ELSE -%] asc[%- END -%]
+				[%- END %]
+			</menudata>
+			<menu>
+				<id>track</id>
+				<itemtype>track</itemtype>
+				<itemformat>track</itemformat>
+				[%- IF playalltracks %]
+				<playtype>all</playtype>
+				[%- END %]
+				<menutype>sql</menutype>
+				<option>
+					<id>byalbum</id>
+					<name>Sort by album</name>
+					<menulinks>number</menulinks>
+					<keyword name="orderby" value="tracks.album,tracks.disc asc,tracks.tracknum asc,tracks.titlesort asc"/>
+				</option>
+				<option>
+					<id>bytitle</id>
+					<name>Sort by title</name>
+					<menulinks>alpha</menulinks>
+					<keyword name="orderby" value="tracks.titlesort asc"/>
+				</option>
+				<menudata>
+					select tracks.id,tracks.title,substr(tracks.titlesort,1,1) from tracks,customtagimporter_track_attributes[% IF library or activelibrary %],multilibrary_track[% END %]
+					where
+						[%- IF library or activelibrary %]
+						tracks.id=multilibrary_track.track and
+						multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %] and
+						[%- END %]
+						tracks.audio=1 and
+						tracks.id=customtagimporter_track_attributes.track and
+						customtagimporter_track_attributes.type='customtag' and
+						customtagimporter_track_attributes.attr='[% customtag %]' and
+						customtagimporter_track_attributes.value='{customtag}'
+					group by tracks.id
+					order by {orderby}
+				</menudata>
+				<menu>
+					<id>trackdetails</id>
+					<menutype>trackdetails</menutype>
+					<menudata>track|0[% IF activelibrary %]|library={clientproperty:plugin.multilibrary:activelibraryno}[% ELSIF library %]|library=[% library %][% END %]</menudata>
+				</menu>
+			</menu>
+		</menu>
+	</menu>
+</custombrowse>

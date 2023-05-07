@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<custombrowse>
+	<requireplugins>CustomTagImporter</requireplugins>
+	<template>
+		<name>Test - Browse Raw Custom Tag Importer Info</name>
+		<description>Test menu to browse the raw data has been scanned with Custom Tag Importer and to verify that the scanned data is correct.</description>
+		<parameter type="text" id="menuname" name="Menu name" value="Custom Tag Importer Raw Info"/>
+		<parameter type="text" id="menugroup" name="Menu group" value=""/>
+		<parameter type="text" id="menuorder" name="Menu sort order (1-100)" value="50"/>
+		<parameter type="text" id="includedclients" name="Only include on these players (empty = all)" value=""/>
+		<parameter type="text" id="excludedclients" name="Exclude from these players" value=""/>
+	</template>
+</custombrowse>
+

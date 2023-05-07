@@ -1,0 +1,1781 @@
+<?xml version="1.0" encoding="utf-8"?>
+<custombrowse>
+	<menu>
+		[%- IF includedclients %]<includedclients>[% includedclients %]</includedclients>[% END %]
+		[%- IF excludedclients %]<excludedclients>[% excludedclients %]</excludedclients>[% END %]
+		[%- IF includedlibraries %]<includedlibraries>[% includedlibraries %]</includedlibraries>[% END %]
+		[%- IF excludedlibraries %]<excludedlibraries>[% excludedlibraries %]</excludedlibraries>[% END %]
+		[% IF menugroup %]<menugroup>[% menugroup %]</menugroup>[% END %]
+		<menuname>[% menuname %]</menuname>
+		[% IF menuorder %]<menuorder>[% menuorder %]</menuorder>[% END %]
+		<menu>
+			<id>genre</id>
+			<menuname>[% IF level1name %][% level1name %][% ELSE %][% IF customtag1 %][% customtag1 %]s[% ELSE %]Songs[% END %][% END %]/Genres</menuname>
+			<itemtype>genre</itemtype>
+			<menutype>sql</menutype>
+			<menulinks>alpha</menulinks>
+			<menudata>
+				select genres.id,genres.name,substr(genres.namesort,1,1) from genres[% IF library or activelibrary %],multilibrary_genre[% END %]
+				[%- IF toplevelgenres or library %]
+				where
+					[%- IF library or activelibrary %]
+					genres.id=multilibrary_genre.genre and
+					multilibrary_genre.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %] [% IF toplevelgenres %]and[% END %]
+					[%- END %]
+					[%- IF toplevelgenres %]
+					genres.name in ([% toplevelgenres %])
+					[% END %]
+				[%- END %]
+				order by genres.namesort asc
+			</menudata>
+			<menu>
+				<id>subgenre</id>
+				<menuname>[% IF level1name %][% level1name %][% ELSE %][% IF customtag1 %][% customtag1 %]s[% ELSE %]Songs[% END %][% END %]/Genres</menuname>
+				<itemtype>genre</itemtype>
+				<menutype>sql</menutype>
+				<menulinks>alpha</menulinks>
+				<menudata>
+					select genres.id,genres.name || '/',substr(genres.namesort,1,1) from genres
+					join genre_track on
+						genres.id = genre_track.genre
+					join tracks on
+						tracks.id = genre_track.track
+					[%- IF library or activelibrary %]
+					join multilibrary_track on
+						tracks.id=multilibrary_track.track and
+						multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+					[%- END %]
+					[%- IF limituppertags %]
+					join customtagimporter_track_attributes as attr1 on
+						tracks.id=attr1.track and
+						attr1.type='customtag' and
+						attr1.attr='[% customtag1 %]'
+					[%- IF customtag2 %]
+					join customtagimporter_track_attributes as attr2 on
+						tracks.id=attr2.track and
+						attr2.type='customtag' and
+						attr2.attr='[% customtag2 %]'
+					[%- END %]
+					[%- IF customtag3 %]
+					join customtagimporter_track_attributes as attr3 on
+						tracks.id=attr3.track and
+						attr3.type='customtag' and
+						attr3.attr='[% customtag3 %]'
+					[%- END %]
+					[%- IF customtag4 %]
+					join customtagimporter_track_attributes as attr4 on
+						tracks.id=attr4.track and
+						attr4.type='customtag' and
+						attr4.attr='[% customtag4 %]'
+					[%- END %]
+					[%- END %]
+					where
+						genres.id != {genre} and
+						exists(select * from genre_track
+							where
+								genre_track.track=tracks.id and
+								genre_track.genre={genre})
+					group by genres.id
+					order by genres.namesort asc
+				</menudata>
+				<menu>
+					<id>subgenre2</id>
+					<menuname>[% IF level1name %][% level1name %][% ELSE %][% IF customtag1 %][% customtag1 %]s[% ELSE %]Songs[% END %][% END %]/Genres</menuname>
+					<itemtype>genre</itemtype>
+					<menutype>sql</menutype>
+					<menulinks>alpha</menulinks>
+					<menudata>
+						select genres.id,genres.name || '/',substr(genres.namesort,1,1) from genres
+						join genre_track on
+							genres.id = genre_track.genre
+						join tracks on
+							tracks.id = genre_track.track
+						[%- IF library or activelibrary %]
+						join multilibrary_track on
+							tracks.id=multilibrary_track.track and
+							multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+						[%- END %]
+						[%- IF limituppertags %]
+						join customtagimporter_track_attributes as attr1 on
+							tracks.id=attr1.track and
+							attr1.type='customtag' and
+							attr1.attr='[% customtag1 %]'
+						[%- IF customtag2 %]
+						join customtagimporter_track_attributes as attr2 on
+							tracks.id=attr2.track and
+							attr2.type='customtag' and
+							attr2.attr='[% customtag2 %]'
+						[%- END %]
+						[%- IF customtag3 %]
+						join customtagimporter_track_attributes as attr3 on
+							tracks.id=attr3.track and
+							attr3.type='customtag' and
+							attr3.attr='[% customtag3 %]'
+						[%- END %]
+						[%- IF customtag4 %]
+						join customtagimporter_track_attributes as attr4 on
+							tracks.id=attr4.track and
+							attr4.type='customtag' and
+							attr4.attr='[% customtag4 %]'
+						[%- END %]
+						[%- END %]
+						where
+							genres.id != {genre} and
+							genres.id != {subgenre} and
+							exists(select * from genre_track
+								where
+									genre_track.track=tracks.id and
+									genre_track.genre={genre}) and
+							exists(select * from genre_track
+								where
+									genre_track.track=tracks.id and
+									genre_track.genre={subgenre})
+						group by genres.id
+						order by genres.namesort asc
+					</menudata>
+					<menu>
+						<id>subgenre3</id>
+						<menuname>[% IF level1name %][% level1name %][% ELSE %][% IF customtag1 %][% customtag1 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+						<itemtype>genre</itemtype>
+						<menutype>sql</menutype>
+						<menulinks>alpha</menulinks>
+						<menudata>
+							select genres.id,genres.name || '/',substr(genres.namesort,1,1) from genres
+							join genre_track on
+								genres.id = genre_track.genre
+							join tracks on
+								tracks.id = genre_track.track
+							[%- IF library or activelibrary %]
+							join multilibrary_track on
+								tracks.id=multilibrary_track.track and
+								multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+							[%- END %]
+							[%- IF limituppertags %]
+							join customtagimporter_track_attributes as attr1 on
+								tracks.id=attr1.track and
+								attr1.type='customtag' and
+								attr1.attr='[% customtag1 %]'
+							[%- IF customtag2 %]
+							join customtagimporter_track_attributes as attr2 on
+								tracks.id=attr2.track and
+								attr2.type='customtag' and
+								attr2.attr='[% customtag2 %]'
+							[%- END %]
+							[%- IF customtag3 %]
+							join customtagimporter_track_attributes as attr3 on
+								tracks.id=attr3.track and
+								attr3.type='customtag' and
+								attr3.attr='[% customtag3 %]'
+							[%- END %]
+							[%- IF customtag4 %]
+							join customtagimporter_track_attributes as attr4 on
+								tracks.id=attr4.track and
+								attr4.type='customtag' and
+								attr4.attr='[% customtag4 %]'
+							[%- END %]
+							[%- END %]
+							where
+								genres.id != {genre} and
+								genres.id != {subgenre} and
+								genres.id != {subgenre2} and
+								exists(select * from genre_track
+									where
+										genre_track.track=tracks.id and
+										genre_track.genre={genre}) and
+								exists(select * from genre_track
+									where
+										genre_track.track=tracks.id and
+										genre_track.genre={subgenre}) and
+								exists(select * from genre_track
+									where
+										genre_track.track=tracks.id and
+										genre_track.genre={subgenre2})
+							group by genres.id
+							order by genres.namesort asc
+						</menudata>
+						<menu>
+							<id>customtag1</id>
+							<menuname>[% IF level2name %][% level2name %][% ELSE %][% IF customtag2 %][% customtag2 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+							<pathtype>sql</pathtype>
+							<pathtypedata>
+								select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+										where
+											type='customtag' and
+											attr='[% customtag1 %]' and
+											value='{context.itemid}'
+							</pathtypedata>
+							<customitemtype>customtag[% customtag1 %]</customitemtype>
+							<menutype>sql</menutype>
+							<menulinks>alpha</menulinks>
+							<menudata>
+								select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+								join genre_track on
+									genre_track.track=customtagimporter_track_attributes.track and
+									genre_track.genre={genre}
+								[%- IF library or activelibrary %]
+								join multilibrary_track on
+									customtagimporter_track_attributes.track=multilibrary_track.track and
+									multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+								[%- END %]
+								[%- IF limituppertags %]
+								[%- IF customtag2 %]
+								join customtagimporter_track_attributes as attr2 on
+									customtagimporter_track_attributes.track=attr2.track and
+									attr2.type='customtag' and
+									attr2.attr='[% customtag2 %]'
+								[%- END %]
+								[%- IF customtag3 %]
+								join customtagimporter_track_attributes as attr3 on
+									customtagimporter_track_attributes.track=attr3.track and
+									attr3.type='customtag' and
+									attr3.attr='[% customtag3 %]'
+								[%- END %]
+								[%- IF customtag4 %]
+								join customtagimporter_track_attributes as attr4 on
+									customtagimporter_track_attributes.track=attr4.track and
+									attr4.type='customtag' and
+									attr4.attr='[% customtag4 %]'
+								[%- END %]
+								[%- END %]
+								[%- IF customsorttag1 %]
+								left join customtagimporter_track_attributes as sortattr on
+									customtagimporter_track_attributes.track=sortattr.track and
+									sortattr.type='customtag' and
+									sortattr.attr='[% customsorttag1 %]'
+								[%- END %]
+								[%- IF customtag1artistsort %]
+								left join contributors on
+									customtagimporter_track_attributes.value=contributors.name
+								[%- END %]
+								where
+									customtagimporter_track_attributes.type='customtag' and
+									customtagimporter_track_attributes.attr='[% customtag1 %]' and
+									exists(select * from genre_track
+										where
+											genre_track.track=customtagimporter_track_attributes.track and
+											genre_track.genre={subgenre}) and
+									exists(select * from genre_track
+										where
+											genre_track.track=customtagimporter_track_attributes.track and
+											genre_track.genre={subgenre2}) and
+									exists(select * from genre_track
+										where
+											genre_track.track=customtagimporter_track_attributes.track and
+											genre_track.genre={subgenre3})
+								group by customtagimporter_track_attributes.value
+								[%- IF customsorttag1 %]
+								[%- IF customtag1artistsort %]
+								order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+								[%- ELSE %]
+								order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+								[%- END %]
+								[%- ELSIF customtag1artistsort %]
+								order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+								[%- ELSE %]
+								order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+								[%- END %]
+							</menudata>
+							[%- IF customtag2 %]
+							<menu>
+								<id>customtag2</id>
+								<menuname>[% IF level3name %][% level3name %][% ELSE %][% IF customtag3 %][% customtag3 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+								<pathtype>sql</pathtype>
+								<pathtypedata>
+									select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+											where
+												type='customtag' and
+												attr='[% customtag2 %]' and
+												value='{context.itemid}'
+								</pathtypedata>
+								<customitemtype>customtag[% customtag2 %]</customitemtype>
+								<menutype>sql</menutype>
+								<menulinks>alpha</menulinks>
+								<menudata>
+									select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+									join genre_track on
+										genre_track.track=customtagimporter_track_attributes.track and
+										genre_track.genre={genre}
+									[%- IF library or activelibrary %]
+									join multilibrary_track on
+										customtagimporter_track_attributes.track=multilibrary_track.track and
+										multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+									[%- END %]
+									join customtagimporter_track_attributes as attr1 on
+										customtagimporter_track_attributes.track=attr1.track and
+										attr1.type='customtag' and
+										attr1.attr='[% customtag1 %]' and
+										attr1.value='{customtag1}'
+									[%- IF limituppertags %]
+									[%- IF customtag3 %]
+									join customtagimporter_track_attributes as attr3 on
+										customtagimporter_track_attributes.track=attr3.track and
+										attr3.type='customtag' and
+										attr3.attr='[% customtag3 %]'
+									[%- END %]
+									[%- IF customtag4 %]
+									join customtagimporter_track_attributes as attr4 on
+										customtagimporter_track_attributes.track=attr4.track and
+										attr4.type='customtag' and
+										attr4.attr='[% customtag4 %]'
+									[%- END %]
+									[%- END %]
+									[%- IF customsorttag2 %]
+									left join customtagimporter_track_attributes as sortattr on
+										customtagimporter_track_attributes.track=sortattr.track and
+										sortattr.type='customtag' and
+										sortattr.attr='[% customsorttag2 %]'
+									[%- END %]
+									[%- IF customtag2artistsort %]
+									left join contributors on
+										customtagimporter_track_attributes.value=contributors.name
+									[%- END %]
+									where
+										customtagimporter_track_attributes.type='customtag' and
+										customtagimporter_track_attributes.attr='[% customtag2 %]' and
+										exists(select * from genre_track
+											where
+												genre_track.track=customtagimporter_track_attributes.track and
+												genre_track.genre={subgenre}) and
+										exists(select * from genre_track
+											where
+												genre_track.track=customtagimporter_track_attributes.track and
+												genre_track.genre={subgenre2}) and
+										exists(select * from genre_track
+											where
+												genre_track.track=customtagimporter_track_attributes.track and
+												genre_track.genre={subgenre3})
+									group by customtagimporter_track_attributes.value
+									[%- IF customsorttag2 %]
+									[%- IF customtag2artistsort %]
+									order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+									[%- ELSE %]
+									order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+									[%- END %]
+									[%- ELSIF customtag2artistsort %]
+									order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+									[%- ELSE %]
+									order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+									[%- END %]
+								</menudata>
+							[%- END %]
+								[%- IF customtag3 %]
+								<menu>
+									<id>customtag3</id>
+									<menuname>[% IF level4name %][% level4name %][% ELSE %][% IF customtag4 %][% customtag4 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+									<pathtype>sql</pathtype>
+									<pathtypedata>
+										select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+												where
+													type='customtag' and
+													attr='[% customtag3 %]' and
+													value='{context.itemid}'
+									</pathtypedata>
+									<customitemtype>customtag[% customtag3 %]</customitemtype>
+									<menutype>sql</menutype>
+									<menulinks>alpha</menulinks>
+									<menudata>
+										select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+										join genre_track on
+											genre_track.track=customtagimporter_track_attributes.track and
+											genre_track.genre={genre}
+										[%- IF library or activelibrary %]
+										join multilibrary_track on
+											customtagimporter_track_attributes.track=multilibrary_track.track and
+											multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+										[%- END %]
+										join customtagimporter_track_attributes as attr1 on
+											customtagimporter_track_attributes.track=attr1.track and
+											attr1.type='customtag' and
+											attr1.attr='[% customtag1 %]' and
+											attr1.value='{customtag1}'
+										join customtagimporter_track_attributes as attr2 on
+											customtagimporter_track_attributes.track=attr2.track and
+											attr2.type='customtag' and
+											attr2.attr='[% customtag2 %]' and
+											attr2.value='{customtag2}'
+										[%- IF limituppertags %]
+										[%- IF customtag4 %]
+										join customtagimporter_track_attributes as attr4 on
+											customtagimporter_track_attributes.track=attr4.track and
+											attr4.type='customtag' and
+											attr4.attr='[% customtag4 %]'
+										[%- END %]
+										[%- END %]
+										[%- IF customsorttag3 %]
+										left join customtagimporter_track_attributes as sortattr on
+											customtagimporter_track_attributes.track=sortattr.track and
+											sortattr.type='customtag' and
+											sortattr.attr='[% customsorttag3 %]'
+										[%- END %]
+										[%- IF customtag3artistsort %]
+										left join contributors on
+											customtagimporter_track_attributes.value=contributors.name
+										[%- END %]
+										where
+											customtagimporter_track_attributes.type='customtag' and
+											customtagimporter_track_attributes.attr='[% customtag3 %]' and
+											exists(select * from genre_track
+												where
+													genre_track.track=customtagimporter_track_attributes.track and
+													genre_track.genre={subgenre}) and
+											exists(select * from genre_track
+												where
+													genre_track.track=customtagimporter_track_attributes.track and
+													genre_track.genre={subgenre2}) and
+											exists(select * from genre_track
+												where
+													genre_track.track=customtagimporter_track_attributes.track and
+													genre_track.genre={subgenre3})
+										group by customtagimporter_track_attributes.value
+										[%- IF customsorttag3 %]
+										[%- IF customtag3artistsort %]
+										order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+										[%- ELSE %]
+										order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+										[%- END %]
+										[%- ELSIF customtag3artistsort %]
+										order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+										[%- ELSE %]
+										order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+										[%- END %]
+									</menudata>
+								[%- END %]
+									[%- IF customtag4 %]
+									<menu>
+										<id>customtag4</id>
+										<menuname>Songs</menuname>
+										<pathtype>sql</pathtype>
+										<pathtypedata>
+											select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+													where
+														type='customtag' and
+														attr='[% customtag4 %]' and
+														value='{context.itemid}'
+										</pathtypedata>
+										<customitemtype>customtag[% customtag4 %]</customitemtype>
+										<menutype>sql</menutype>
+										<menulinks>alpha</menulinks>
+										<menudata>
+											select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+											join genre_track on
+												genre_track.track=customtagimporter_track_attributes.track and
+												genre_track.genre={genre}
+											[%- IF library or activelibrary %]
+											join multilibrary_track on
+												customtagimporter_track_attributes.track=multilibrary_track.track and
+												multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+											[%- END %]
+											join customtagimporter_track_attributes as attr1 on
+												customtagimporter_track_attributes.track=attr1.track and
+												attr1.type='customtag' and
+												attr1.attr='[% customtag1 %]' and
+												attr1.value='{customtag1}'
+											join customtagimporter_track_attributes as attr2 on
+												customtagimporter_track_attributes.track=attr2.track and
+												attr2.type='customtag' and
+												attr2.attr='[% customtag2 %]' and
+												attr2.value='{customtag2}'
+											join customtagimporter_track_attributes as attr3 on
+												customtagimporter_track_attributes.track=attr3.track and
+												attr3.type='customtag' and
+												attr3.attr='[% customtag3 %]' and
+												attr3.value='{customtag3}'
+											[%- IF limituppertags %]
+											[%- END %]
+											[%- IF customsorttag4 %]
+											left join customtagimporter_track_attributes as sortattr on
+												customtagimporter_track_attributes.track=sortattr.track and
+												sortattr.type='customtag' and
+												sortattr.attr='[% customsorttag4 %]'
+											[%- END %]
+											[%- IF customtag4artistsort %]
+											left join contributors on
+												customtagimporter_track_attributes.value=contributors.name
+											[%- END %]
+											where
+												customtagimporter_track_attributes.type='customtag' and
+												customtagimporter_track_attributes.attr='[% customtag4 %]' and
+												exists(select * from genre_track
+													where
+														genre_track.track=customtagimporter_track_attributes.track and
+														genre_track.genre={subgenre}) and
+												exists(select * from genre_track
+													where
+														genre_track.track=customtagimporter_track_attributes.track and
+														genre_track.genre={subgenre2}) and
+												exists(select * from genre_track
+													where
+														genre_track.track=customtagimporter_track_attributes.track and
+														genre_track.genre={subgenre3})
+											group by customtagimporter_track_attributes.value
+											[%- IF customsorttag4 %]
+											[%- IF customtag4artistsort %]
+											order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+											[%- ELSE %]
+											order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+											[%- END %]
+											[%- ELSIF customtag4artistsort %]
+											order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+											[%- ELSE %]
+											order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+											[%- END %]
+										</menudata>
+									[%- END %]
+										<menu>
+											<id>track</id>
+											<itemtype>track</itemtype>
+											[% IF !customtracktag %]
+											<itemformat>track</itemformat>
+											[% END %]
+											[%- IF playalltracks %]
+											<playtype>all</playtype>
+											[%- END %]
+											<menutype>sql</menutype>
+											<option>
+												<id>byalbum</id>
+												<name>Sort by album</name>
+												<menulinks>number</menulinks>
+												<keyword name="orderby" value="tracks.album,tracks.disc asc,tracks.tracknum asc,[% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %] asc"/>
+											</option>
+											<option>
+												<id>bytitle</id>
+												<name>Sort by title</name>
+												<menulinks>alpha</menulinks>
+												<keyword name="orderby" value="[% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %] asc"/>
+											</option>
+											<menudata>
+												select tracks.id,[% IF customtracktag %]ifnull(tracktag.value,tracks.title)[% ELSE %]tracks.title[% END %],substr([% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %],1,1) from tracks
+												join genre_track on
+													genre_track.track=tracks.id and
+													genre_track.genre={genre}
+												join customtagimporter_track_attributes attr1 on
+													tracks.id=attr1.track and
+													attr1.type='customtag' and
+													attr1.attr='[% customtag1 %]' and
+													attr1.value='{customtag1}'
+												[%- IF customtag2 %]
+												join customtagimporter_track_attributes attr2 on
+													tracks.id=attr2.track and
+													attr2.type='customtag' and
+													attr2.attr='[% customtag2 %]' and
+													attr2.value='{customtag2}'
+												[%- END %]
+												[%- IF customtag3 %]
+												join customtagimporter_track_attributes attr3 on
+													tracks.id=attr3.track and
+													attr3.type='customtag' and
+													attr3.attr='[% customtag3 %]' and
+													attr3.value='{customtag3}'
+												[%- END %]
+												[%- IF customtag4 %]
+												join customtagimporter_track_attributes attr4 on
+													tracks.id=attr4.track and
+													attr4.type='customtag' and
+													attr4.attr='[% customtag4 %]' and
+													attr4.value='{customtag4}'
+												[%- END %]
+												[%- IF library or activelibrary %]
+												join multilibrary_track on
+													tracks.id=multilibrary_track.track and
+													multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+												[%- END %]
+												[%- IF customtracktag %]
+												left join customtagimporter_track_attributes tracktag on
+													tracks.id=tracktag.track and
+													tracktag.type='customtag' and
+													tracktag.attr='[% customtracktag %]'
+												[%- END %]
+												where
+													tracks.audio=1 and
+													exists(select * from genre_track
+														where
+															genre_track.track=tracks.id and
+															genre_track.genre={subgenre}) and
+													exists(select * from genre_track
+														where
+															genre_track.track=tracks.id and
+															genre_track.genre={subgenre2}) and
+													exists(select * from genre_track
+														where
+															genre_track.track=tracks.id and
+															genre_track.genre={subgenre3})
+												group by tracks.id
+												order by {orderby}
+											</menudata>
+											<menu>
+												<id>trackdetails</id>
+												<menutype>trackdetails</menutype>
+												<menudata>track|0[% IF activelibrary %]|library={clientproperty:plugin.multilibrary:activelibraryno}[% ELSIF library %]|library=[% library %][% END %]</menudata>
+											</menu>
+										</menu>
+									[%- IF customtag4 %]
+									</menu>
+									[%- END %]
+								[%- IF customtag3 %]
+								</menu>
+								[%- END %]
+							[%- IF customtag2 %]
+							</menu>
+							[%- END %]
+						</menu>
+					</menu>
+					<menu>
+						<id>customtag1</id>
+						<menuname>[% IF level2name %][% level2name %][% ELSE %][% IF customtag2 %][% customtag2 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+						<pathtype>sql</pathtype>
+						<pathtypedata>
+							select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+									where
+										type='customtag' and
+										attr='[% customtag1 %]' and
+										value='{context.itemid}'
+						</pathtypedata>
+						<customitemtype>customtag[% customtag1 %]</customitemtype>
+						<menutype>sql</menutype>
+						<menulinks>alpha</menulinks>
+						<menudata>
+							select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+							join genre_track on
+								genre_track.track=customtagimporter_track_attributes.track and
+								genre_track.genre={genre}
+							[%- IF library or activelibrary %]
+							join multilibrary_track on
+								customtagimporter_track_attributes.track=multilibrary_track.track and
+								multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+							[%- END %]
+							[%- IF limituppertags %]
+							[%- IF customtag2 %]
+							join customtagimporter_track_attributes as attr2 on
+								customtagimporter_track_attributes.track=attr2.track and
+								attr2.type='customtag' and
+								attr2.attr='[% customtag2 %]'
+							[%- END %]
+							[%- IF customtag3 %]
+							join customtagimporter_track_attributes as attr3 on
+								customtagimporter_track_attributes.track=attr3.track and
+								attr3.type='customtag' and
+								attr3.attr='[% customtag3 %]'
+							[%- END %]
+							[%- IF customtag4 %]
+							join customtagimporter_track_attributes as attr4 on
+								customtagimporter_track_attributes.track=attr4.track and
+								attr4.type='customtag' and
+								attr4.attr='[% customtag4 %]'
+							[%- END %]
+							[%- END %]
+							[%- IF customsorttag1 %]
+							left join customtagimporter_track_attributes as sortattr on
+								customtagimporter_track_attributes.track=sortattr.track and
+								sortattr.type='customtag' and
+								sortattr.attr='[% customsorttag1 %]'
+							[%- END %]
+							[%- IF customtag1artistsort %]
+							left join contributors on
+								customtagimporter_track_attributes.value=contributors.name
+							[%- END %]
+							where
+								customtagimporter_track_attributes.type='customtag' and
+								customtagimporter_track_attributes.attr='[% customtag1 %]' and
+								exists(select * from genre_track
+									where
+										genre_track.track=customtagimporter_track_attributes.track and
+										genre_track.genre={subgenre}) and
+								exists(select * from genre_track
+									where
+										genre_track.track=customtagimporter_track_attributes.track and
+										genre_track.genre={subgenre2})
+							group by customtagimporter_track_attributes.value
+							[%- IF customsorttag1 %]
+							[%- IF customtag1artistsort %]
+							order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+							[%- ELSE %]
+							order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+							[%- END %]
+							[%- ELSIF customtag1artistsort %]
+							order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+							[%- ELSE %]
+							order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+							[%- END %]
+						</menudata>
+						[%- IF customtag2 %]
+						<menu>
+							<id>customtag2</id>
+							<menuname>[% IF level3name %][% level3name %][% ELSE %][% IF customtag3 %][% customtag3 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+							<pathtype>sql</pathtype>
+							<pathtypedata>
+								select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+										where
+											type='customtag' and
+											attr='[% customtag2 %]' and
+											value='{context.itemid}'
+							</pathtypedata>
+							<customitemtype>customtag[% customtag2 %]</customitemtype>
+							<menutype>sql</menutype>
+							<menulinks>alpha</menulinks>
+							<menudata>
+								select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+								join genre_track on
+									genre_track.track=customtagimporter_track_attributes.track and
+									genre_track.genre={genre}
+								[%- IF library or activelibrary %]
+								join multilibrary_track on
+									customtagimporter_track_attributes.track=multilibrary_track.track and
+									multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+								[%- END %]
+								join customtagimporter_track_attributes as attr1 on
+									customtagimporter_track_attributes.track=attr1.track and
+									attr1.type='customtag' and
+									attr1.attr='[% customtag1 %]' and
+									attr1.value='{customtag1}'
+								[%- IF limituppertags %]
+								[%- IF customtag3 %]
+								join customtagimporter_track_attributes as attr3 on
+									customtagimporter_track_attributes.track=attr3.track and
+									attr3.type='customtag' and
+									attr3.attr='[% customtag3 %]'
+								[%- END %]
+								[%- IF customtag4 %]
+								join customtagimporter_track_attributes as attr4 on
+									customtagimporter_track_attributes.track=attr4.track and
+									attr4.type='customtag' and
+									attr4.attr='[% customtag4 %]'
+								[%- END %]
+								[%- END %]
+								[%- IF customsorttag2 %]
+								left join customtagimporter_track_attributes as sortattr on
+									customtagimporter_track_attributes.track=sortattr.track and
+									sortattr.type='customtag' and
+									sortattr.attr='[% customsorttag2 %]'
+								[%- END %]
+								[%- IF customtag2artistsort %]
+								left join contributors on
+									customtagimporter_track_attributes.value=contributors.name
+								[%- END %]
+								where
+									customtagimporter_track_attributes.type='customtag' and
+									customtagimporter_track_attributes.attr='[% customtag2 %]' and
+									exists(select * from genre_track
+										where
+											genre_track.track=customtagimporter_track_attributes.track and
+											genre_track.genre={subgenre}) and
+									exists(select * from genre_track
+										where
+											genre_track.track=customtagimporter_track_attributes.track and
+											genre_track.genre={subgenre2})
+								group by customtagimporter_track_attributes.value
+								[%- IF customsorttag2 %]
+								[%- IF customtag2artistsort %]
+								order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+								[%- ELSE %]
+								order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+								[%- END %]
+								[%- ELSIF customtag2artistsort %]
+								order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+								[%- ELSE %]
+								order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+								[%- END %]
+							</menudata>
+						[%- END %]
+							[%- IF customtag3 %]
+							<menu>
+								<id>customtag3</id>
+								<menuname>[% IF level4name %][% level4name %][% ELSE %][% IF customtag4 %][% customtag4 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+								<pathtype>sql</pathtype>
+								<pathtypedata>
+									select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+											where
+												type='customtag' and
+												attr='[% customtag3 %]' and
+												value='{context.itemid}'
+								</pathtypedata>
+								<customitemtype>customtag[% customtag3 %]</customitemtype>
+								<menutype>sql</menutype>
+								<menulinks>alpha</menulinks>
+								<menudata>
+									select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+									join genre_track on
+										genre_track.track=customtagimporter_track_attributes.track and
+										genre_track.genre={genre}
+									[%- IF library or activelibrary %]
+									join multilibrary_track on
+										customtagimporter_track_attributes.track=multilibrary_track.track and
+										multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+									[%- END %]
+									join customtagimporter_track_attributes as attr1 on
+										customtagimporter_track_attributes.track=attr1.track and
+										attr1.type='customtag' and
+										attr1.attr='[% customtag1 %]' and
+										attr1.value='{customtag1}'
+									join customtagimporter_track_attributes as attr2 on
+										customtagimporter_track_attributes.track=attr2.track and
+										attr2.type='customtag' and
+										attr2.attr='[% customtag2 %]' and
+										attr2.value='{customtag2}'
+									[%- IF limituppertags %]
+									[%- IF customtag4 %]
+									join customtagimporter_track_attributes as attr4 on
+										customtagimporter_track_attributes.track=attr4.track and
+										attr4.type='customtag' and
+										attr4.attr='[% customtag4 %]'
+									[%- END %]
+									[%- END %]
+									[%- IF customsorttag3 %]
+									left join customtagimporter_track_attributes as sortattr on
+										customtagimporter_track_attributes.track=sortattr.track and
+										sortattr.type='customtag' and
+										sortattr.attr='[% customsorttag3 %]'
+									[%- END %]
+									[%- IF customtag3artistsort %]
+									left join contributors on
+										customtagimporter_track_attributes.value=contributors.name
+									[%- END %]
+									where
+										customtagimporter_track_attributes.type='customtag' and
+										customtagimporter_track_attributes.attr='[% customtag3 %]' and
+										exists(select * from genre_track
+											where
+												genre_track.track=customtagimporter_track_attributes.track and
+												genre_track.genre={subgenre}) and
+										exists(select * from genre_track
+											where
+												genre_track.track=customtagimporter_track_attributes.track and
+												genre_track.genre={subgenre2})
+									group by customtagimporter_track_attributes.value
+									[%- IF customsorttag3 %]
+									[%- IF customtag3artistsort %]
+									order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+									[%- ELSE %]
+									order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+									[%- END %]
+									[%- ELSIF customtag3artistsort %]
+									order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+									[%- ELSE %]
+									order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+									[%- END %]
+								</menudata>
+							[%- END %]
+								[%- IF customtag4 %]
+								<menu>
+									<id>customtag4</id>
+									<menuname>Songs</menuname>
+									<pathtype>sql</pathtype>
+									<pathtypedata>
+										select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+												where
+													type='customtag' and
+													attr='[% customtag4 %]' and
+													value='{context.itemid}'
+									</pathtypedata>
+									<customitemtype>customtag[% customtag4 %]</customitemtype>
+									<menutype>sql</menutype>
+									<menulinks>alpha</menulinks>
+									<menudata>
+										select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+										join genre_track on
+											genre_track.track=customtagimporter_track_attributes.track and
+											genre_track.genre={genre}
+										[%- IF library or activelibrary %]
+										join multilibrary_track on
+											customtagimporter_track_attributes.track=multilibrary_track.track and
+											multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+										[%- END %]
+										join customtagimporter_track_attributes as attr1 on
+											customtagimporter_track_attributes.track=attr1.track and
+											attr1.type='customtag' and
+											attr1.attr='[% customtag1 %]' and
+											attr1.value='{customtag1}'
+										join customtagimporter_track_attributes as attr2 on
+											customtagimporter_track_attributes.track=attr2.track and
+											attr2.type='customtag' and
+											attr2.attr='[% customtag2 %]' and
+											attr2.value='{customtag2}'
+										join customtagimporter_track_attributes as attr3 on
+											customtagimporter_track_attributes.track=attr3.track and
+											attr3.type='customtag' and
+											attr3.attr='[% customtag3 %]' and
+											attr3.value='{customtag3}'
+										[%- IF limituppertags %]
+										[%- END %]
+										[%- IF customsorttag4 %]
+										left join customtagimporter_track_attributes as sortattr on
+											customtagimporter_track_attributes.track=sortattr.track and
+											sortattr.type='customtag' and
+											sortattr.attr='[% customsorttag4 %]'
+										[%- END %]
+										[%- IF customtag4artistsort %]
+										left join contributors on
+											customtagimporter_track_attributes.value=contributors.name
+										[%- END %]
+										where
+											customtagimporter_track_attributes.type='customtag' and
+											customtagimporter_track_attributes.attr='[% customtag4 %]' and
+											exists(select * from genre_track
+												where
+													genre_track.track=customtagimporter_track_attributes.track and
+													genre_track.genre={subgenre}) and
+											exists(select * from genre_track
+												where
+													genre_track.track=customtagimporter_track_attributes.track and
+													genre_track.genre={subgenre2})
+										group by customtagimporter_track_attributes.value
+										[%- IF customsorttag4 %]
+										[%- IF customtag4artistsort %]
+										order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+										[%- ELSE %]
+										order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+										[%- END %]
+										[%- ELSIF customtag4artistsort %]
+										order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+										[%- ELSE %]
+										order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+										[%- END %]
+									</menudata>
+								[%- END %]
+									<menu>
+										<id>track</id>
+										<itemtype>track</itemtype>
+										[% IF !customtracktag %]
+										<itemformat>track</itemformat>
+										[% END %]
+										[%- IF playalltracks %]
+										<playtype>all</playtype>
+										[%- END %]
+										<menutype>sql</menutype>
+										<option>
+											<id>byalbum</id>
+											<name>Sort by album</name>
+											<menulinks>number</menulinks>
+											<keyword name="orderby" value="tracks.album,tracks.disc asc,tracks.tracknum asc,[% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %] asc"/>
+										</option>
+										<option>
+											<id>bytitle</id>
+											<name>Sort by title</name>
+											<menulinks>alpha</menulinks>
+											<keyword name="orderby" value="[% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]racks.titlesort[% END %] asc"/>
+										</option>
+										<menudata>
+											select tracks.id,[% IF customtracktag %]ifnull(tracktag.value,tracks.title)[% ELSE %]tracks.title[% END %],substr([% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %],1,1) from tracks
+											join genre_track on
+												genre_track.track=tracks.id and
+												genre_track.genre={genre}
+											join customtagimporter_track_attributes attr1 on
+												tracks.id=attr1.track and
+												attr1.type='customtag' and
+												attr1.attr='[% customtag1 %]' and
+												attr1.value='{customtag1}'
+											[%- IF customtag2 %]
+											join customtagimporter_track_attributes attr2 on
+												tracks.id=attr2.track and
+												attr2.type='customtag' and
+												attr2.attr='[% customtag2 %]' and
+												attr2.value='{customtag2}'
+											[%- END %]
+											[%- IF customtag3 %]
+											join customtagimporter_track_attributes attr3 on
+												tracks.id=attr3.track and
+												attr3.type='customtag' and
+												attr3.attr='[% customtag3 %]' and
+												attr3.value='{customtag3}'
+											[%- END %]
+											[%- IF customtag4 %]
+											join customtagimporter_track_attributes attr4 on
+												tracks.id=attr4.track and
+												attr4.type='customtag' and
+												attr4.attr='[% customtag4 %]' and
+												attr4.value='{customtag4}'
+											[%- END %]
+											[%- IF library or activelibrary %]
+											join multilibrary_track on
+												tracks.id=multilibrary_track.track and
+												multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+											[%- END %]
+											[%- IF customtracktag %]
+											left join customtagimporter_track_attributes tracktag on
+												tracks.id=tracktag.track and
+												tracktag.type='customtag' and
+												tracktag.attr='[% customtracktag %]'
+											[%- END %]
+											where
+												tracks.audio=1 and
+												exists(select * from genre_track
+													where
+														genre_track.track=tracks.id and
+														genre_track.genre={subgenre}) and
+												exists(select * from genre_track
+													where
+														genre_track.track=tracks.id and
+														genre_track.genre={subgenre2})
+											group by tracks.id
+											order by {orderby}
+										</menudata>
+										<menu>
+											<id>trackdetails</id>
+											<menutype>trackdetails</menutype>
+											<menudata>track|0[% IF activelibrary %]|library={clientproperty:plugin.multilibrary:activelibraryno}[% ELSIF library %]|library=[% library %][% END %]</menudata>
+										</menu>
+									</menu>
+								[%- IF customtag4 %]
+								</menu>
+								[%- END %]
+							[%- IF customtag3 %]
+							</menu>
+							[%- END %]
+						[%- IF customtag2 %]
+						</menu>
+						[%- END %]
+					</menu>
+				</menu>
+				<menu>
+					<id>customtag1</id>
+					<menuname>[% IF level2name %][% level2name %][% ELSE %][% IF customtag2 %][% customtag2 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+					<pathtype>sql</pathtype>
+					<pathtypedata>
+						select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+								where
+									type='customtag' and
+									attr='[% customtag1 %]' and
+									value='{context.itemid}'
+					</pathtypedata>
+					<customitemtype>customtag[% customtag1 %]</customitemtype>
+					<menutype>sql</menutype>
+					<menulinks>alpha</menulinks>
+					<menudata>
+						select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+						join genre_track on
+							genre_track.track=customtagimporter_track_attributes.track and
+							genre_track.genre={genre}
+						[%- IF library or activelibrary %]
+						join multilibrary_track on
+							customtagimporter_track_attributes.track=multilibrary_track.track and
+							multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+						[%- END %]
+						[%- IF limituppertags %]
+						[%- IF customtag2 %]
+						join customtagimporter_track_attributes as attr2 on
+							customtagimporter_track_attributes.track=attr2.track and
+							attr2.type='customtag' and
+							attr2.attr='[% customtag2 %]'
+						[%- END %]
+						[%- IF customtag3 %]
+						join customtagimporter_track_attributes as attr3 on
+							customtagimporter_track_attributes.track=attr3.track and
+							attr3.type='customtag' and
+							attr3.attr='[% customtag3 %]'
+						[%- END %]
+						[%- IF customtag4 %]
+						join customtagimporter_track_attributes as attr4 on
+							customtagimporter_track_attributes.track=attr4.track and
+							attr4.type='customtag' and
+							attr4.attr='[% customtag4 %]'
+						[%- END %]
+						[%- END %]
+						[%- IF customsorttag1 %]
+						left join customtagimporter_track_attributes as sortattr on
+							customtagimporter_track_attributes.track=sortattr.track and
+							sortattr.type='customtag' and
+							sortattr.attr='[% customsorttag1 %]'
+						[%- END %]
+						[%- IF customtag1artistsort %]
+						left join contributors on
+							customtagimporter_track_attributes.value=contributors.name
+						[%- END %]
+						where
+							customtagimporter_track_attributes.type='customtag' and
+							customtagimporter_track_attributes.attr='[% customtag1 %]' and
+							exists(select * from genre_track
+								where
+									genre_track.track=customtagimporter_track_attributes.track and
+									genre_track.genre={subgenre})
+						group by customtagimporter_track_attributes.value
+						[%- IF customsorttag1 %]
+						[%- IF customtag1artistsort %]
+						order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+						[%- ELSE %]
+						order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+						[%- END %]
+						[%- ELSIF customtag1artistsort %]
+						order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+						[%- ELSE %]
+						order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+						[%- END %]
+					</menudata>
+					[%- IF customtag2 %]
+					<menu>
+						<id>customtag2</id>
+						<menuname>[% IF level3name %][% level3name %][% ELSE %][% IF customtag3 %][% customtag3 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+						<pathtype>sql</pathtype>
+						<pathtypedata>
+							select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+									where
+										type='customtag' and
+										attr='[% customtag2 %]' and
+										value='{context.itemid}'
+						</pathtypedata>
+						<customitemtype>customtag[% customtag2 %]</customitemtype>
+						<menutype>sql</menutype>
+						<menulinks>alpha</menulinks>
+						<menudata>
+							select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+							join genre_track on
+								genre_track.track=customtagimporter_track_attributes.track and
+								genre_track.genre={genre}
+							[%- IF library or activelibrary %]
+							join multilibrary_track on
+								customtagimporter_track_attributes.track=multilibrary_track.track and
+								multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+							[%- END %]
+							join customtagimporter_track_attributes as attr1 on
+								customtagimporter_track_attributes.track=attr1.track and
+								attr1.type='customtag' and
+								attr1.attr='[% customtag1 %]' and
+								attr1.value='{customtag1}'
+							[%- IF limituppertags %]
+							[%- IF customtag3 %]
+							join customtagimporter_track_attributes as attr3 on
+								customtagimporter_track_attributes.track=attr3.track and
+								attr3.type='customtag' and
+								attr3.attr='[% customtag3 %]'
+							[%- END %]
+							[%- IF customtag4 %]
+							join customtagimporter_track_attributes as attr4 on
+								customtagimporter_track_attributes.track=attr4.track and
+								attr4.type='customtag' and
+								attr4.attr='[% customtag4 %]'
+							[%- END %]
+							[%- END %]
+							[%- IF customsorttag2 %]
+							left join customtagimporter_track_attributes as sortattr on
+								customtagimporter_track_attributes.track=sortattr.track and
+								sortattr.type='customtag' and
+								sortattr.attr='[% customsorttag2 %]'
+							[%- END %]
+							[%- IF customtag2artistsort %]
+							left join contributors on
+								customtagimporter_track_attributes.value=contributors.name
+							[%- END %]
+							where
+								customtagimporter_track_attributes.type='customtag' and
+								customtagimporter_track_attributes.attr='[% customtag2 %]' and
+								exists(select * from genre_track
+									where
+										genre_track.track=customtagimporter_track_attributes.track and
+										genre_track.genre={subgenre})
+							group by customtagimporter_track_attributes.value
+							[%- IF customsorttag2 %]
+							[%- IF customtag2artistsort %]
+							order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+							[%- ELSE %]
+							order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+							[%- END %]
+							[%- ELSIF customtag2artistsort %]
+							order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+							[%- ELSE %]
+							order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+							[%- END %]
+						</menudata>
+					[%- END %]
+						[%- IF customtag3 %]
+						<menu>
+							<id>customtag3</id>
+							<menuname>[% IF level4name %][% level4name %][% ELSE %][% IF customtag4 %][% customtag4 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+							<pathtype>sql</pathtype>
+							<pathtypedata>
+								select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+										where
+											type='customtag' and
+											attr='[% customtag3 %]' and
+											value='{context.itemid}'
+							</pathtypedata>
+							<customitemtype>customtag[% customtag3 %]</customitemtype>
+							<menutype>sql</menutype>
+							<menulinks>alpha</menulinks>
+							<menudata>
+								select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+								join genre_track on
+									genre_track.track=customtagimporter_track_attributes.track and
+									genre_track.genre={genre}
+								[%- IF library or activelibrary %]
+								join multilibrary_track on
+									customtagimporter_track_attributes.track=multilibrary_track.track and
+									multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+								[%- END %]
+								join customtagimporter_track_attributes as attr1 on
+									customtagimporter_track_attributes.track=attr1.track and
+									attr1.type='customtag' and
+									attr1.attr='[% customtag1 %]' and
+									attr1.value='{customtag1}'
+								join customtagimporter_track_attributes as attr2 on
+									customtagimporter_track_attributes.track=attr2.track and
+									attr2.type='customtag' and
+									attr2.attr='[% customtag2 %]' and
+									attr2.value='{customtag2}'
+								[%- IF limituppertags %]
+								[%- IF customtag4 %]
+								join customtagimporter_track_attributes as attr4 on
+									customtagimporter_track_attributes.track=attr4.track and
+									attr4.type='customtag' and
+									attr4.attr='[% customtag4 %]'
+								[%- END %]
+								[%- END %]
+								[%- IF customsorttag3 %]
+								left join customtagimporter_track_attributes as sortattr on
+									customtagimporter_track_attributes.track=sortattr.track and
+									sortattr.type='customtag' and
+									sortattr.attr='[% customsorttag3 %]'
+								[%- END %]
+								[%- IF customtag3artistsort %]
+								left join contributors on
+									customtagimporter_track_attributes.value=contributors.name
+								[%- END %]
+								where
+									customtagimporter_track_attributes.type='customtag' and
+									customtagimporter_track_attributes.attr='[% customtag3 %]' and
+									exists(select * from genre_track
+										where
+											genre_track.track=customtagimporter_track_attributes.track and
+											genre_track.genre={subgenre})
+								group by customtagimporter_track_attributes.value
+								[%- IF customsorttag3 %]
+								[%- IF customtag3artistsort %]
+								order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+								[%- ELSE %]
+								order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+								[%- END %]
+								[%- ELSIF customtag3artistsort %]
+								order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+								[%- ELSE %]
+								order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+								[%- END %]
+							</menudata>
+						[%- END %]
+							[%- IF customtag4 %]
+							<menu>
+								<id>customtag4</id>
+								<menuname>Songs</menuname>
+								<pathtype>sql</pathtype>
+								<pathtypedata>
+									select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+											where
+												type='customtag' and
+												attr='[% customtag4 %]' and
+												value='{context.itemid}'
+								</pathtypedata>
+								<customitemtype>customtag[% customtag4 %]</customitemtype>
+								<menutype>sql</menutype>
+								<menulinks>alpha</menulinks>
+								<menudata>
+									select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+									join genre_track on
+										genre_track.track=customtagimporter_track_attributes.track and
+										genre_track.genre={genre}
+									[%- IF library or activelibrary %]
+									join multilibrary_track on
+										customtagimporter_track_attributes.track=multilibrary_track.track and
+										multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+									[%- END %]
+									join customtagimporter_track_attributes as attr1 on
+										customtagimporter_track_attributes.track=attr1.track and
+										attr1.type='customtag' and
+										attr1.attr='[% customtag1 %]' and
+										attr1.value='{customtag1}'
+									join customtagimporter_track_attributes as attr2 on
+										customtagimporter_track_attributes.track=attr2.track and
+										attr2.type='customtag' and
+										attr2.attr='[% customtag2 %]' and
+										attr2.value='{customtag2}'
+									join customtagimporter_track_attributes as attr3 on
+										customtagimporter_track_attributes.track=attr3.track and
+										attr3.type='customtag' and
+										attr3.attr='[% customtag3 %]' and
+										attr3.value='{customtag3}'
+									[%- IF limituppertags %]
+									[%- END %]
+									[%- IF customsorttag4 %]
+									left join customtagimporter_track_attributes as sortattr on
+										customtagimporter_track_attributes.track=sortattr.track and
+										sortattr.type='customtag' and
+										sortattr.attr='[% customsorttag4 %]'
+									[%- END %]
+									[%- IF customtag4artistsort %]
+									left join contributors on
+										customtagimporter_track_attributes.value=contributors.name
+									[%- END %]
+									where
+										customtagimporter_track_attributes.type='customtag' and
+										customtagimporter_track_attributes.attr='[% customtag4 %]' and
+										exists(select * from genre_track
+											where
+												genre_track.track=customtagimporter_track_attributes.track and
+												genre_track.genre={subgenre})
+									group by customtagimporter_track_attributes.value
+									[%- IF customsorttag4 %]
+									[%- IF customtag4artistsort %]
+									order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+									[%- ELSE %]
+									order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+									[%- END %]
+									[%- ELSIF customtag4artistsort %]
+									order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+									[%- ELSE %]
+									order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+									[%- END %]
+								</menudata>
+							[%- END %]
+								<menu>
+									<id>track</id>
+									<itemtype>track</itemtype>
+									[% IF !customtracktag %]
+									<itemformat>track</itemformat>
+									[% END %]
+									[%- IF playalltracks %]
+									<playtype>all</playtype>
+									[%- END %]
+									<menutype>sql</menutype>
+									<option>
+										<id>byalbum</id>
+										<name>Sort by album</name>
+										<menulinks>number</menulinks>
+										<keyword name="orderby" value="tracks.album,tracks.disc asc,tracks.tracknum asc,[% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %] asc"/>
+									</option>
+									<option>
+										<id>bytitle</id>
+										<name>Sort by title</name>
+										<menulinks>alpha</menulinks>
+										<keyword name="orderby" value="[% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %] asc"/>
+									</option>
+									<menudata>
+										select tracks.id,[% IF customtracktag %]ifnull(tracktag.value,tracks.title)[% ELSE %]tracks.title[% END %],substr([% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %],1,1) from tracks
+										join genre_track on
+											genre_track.track=tracks.id and
+											genre_track.genre={genre}
+										join customtagimporter_track_attributes attr1 on
+											tracks.id=attr1.track and
+											attr1.type='customtag' and
+											attr1.attr='[% customtag1 %]' and
+											attr1.value='{customtag1}'
+										[%- IF customtag2 %]
+										join customtagimporter_track_attributes attr2 on
+											tracks.id=attr2.track and
+											attr2.type='customtag' and
+											attr2.attr='[% customtag2 %]' and
+											attr2.value='{customtag2}'
+										[%- END %]
+										[%- IF customtag3 %]
+										join customtagimporter_track_attributes attr3 on
+											tracks.id=attr3.track and
+											attr3.type='customtag' and
+											attr3.attr='[% customtag3 %]' and
+											attr3.value='{customtag3}'
+										[%- END %]
+										[%- IF customtag4 %]
+										join customtagimporter_track_attributes attr4 on
+											tracks.id=attr4.track and
+											attr4.type='customtag' and
+											attr4.attr='[% customtag4 %]' and
+											attr4.value='{customtag4}'
+										[%- END %]
+										[%- IF library or activelibrary %]
+										join multilibrary_track on
+											tracks.id=multilibrary_track.track and
+											multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+										[%- END %]
+										[%- IF customtracktag %]
+										left join customtagimporter_track_attributes tracktag on
+											tracks.id=tracktag.track and
+											tracktag.type='customtag' and
+											tracktag.attr='[% customtracktag %]'
+										[%- END %]
+										where
+											tracks.audio=1 and
+											exists(select * from genre_track
+												where
+													genre_track.track=tracks.id and
+													genre_track.genre={subgenre})
+										group by tracks.id
+										order by {orderby}
+									</menudata>
+									<menu>
+										<id>trackdetails</id>
+										<menutype>trackdetails</menutype>
+										<menudata>track|0[% IF activelibrary %]|library={clientproperty:plugin.multilibrary:activelibraryno}[% ELSIF library %]|library=[% library %][% END %]</menudata>
+									</menu>
+								</menu>
+							[%- IF customtag4 %]
+							</menu>
+							[%- END %]
+						[%- IF customtag3 %]
+						</menu>
+						[%- END %]
+					[%- IF customtag2 %]
+					</menu>
+					[%- END %]
+				</menu>
+			</menu>
+			<menu>
+				<id>customtag1</id>
+				<menuname>[% IF level2name %][% level2name %][% ELSE %][% IF customtag2 %][% customtag2 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+				<pathtype>sql</pathtype>
+				<pathtypedata>
+					select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+							where
+								type='customtag' and
+								attr='[% customtag1 %]' and
+								value='{context.itemid}'
+				</pathtypedata>
+				<customitemtype>customtag[% customtag1 %]</customitemtype>
+				<menutype>sql</menutype>
+				<menulinks>alpha</menulinks>
+				<menudata>
+					select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+					join genre_track on
+						genre_track.track=customtagimporter_track_attributes.track and
+						genre_track.genre={genre}
+					[%- IF library or activelibrary %]
+					join multilibrary_track on
+						customtagimporter_track_attributes.track=multilibrary_track.track and
+						multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+					[%- END %]
+					[%- IF limituppertags %]
+					[%- IF customtag2 %]
+					join customtagimporter_track_attributes as attr2 on
+						customtagimporter_track_attributes.track=attr2.track and
+						attr2.type='customtag' and
+						attr2.attr='[% customtag2 %]'
+					[%- END %]
+					[%- IF customtag3 %]
+					join customtagimporter_track_attributes as attr3 on
+						customtagimporter_track_attributes.track=attr3.track and
+						attr3.type='customtag' and
+						attr3.attr='[% customtag3 %]'
+					[%- END %]
+					[%- IF customtag4 %]
+					join customtagimporter_track_attributes as attr4 on
+						customtagimporter_track_attributes.track=attr4.track and
+						attr4.type='customtag' and
+						attr4.attr='[% customtag4 %]'
+					[%- END %]
+					[%- END %]
+					[%- IF customsorttag1 %]
+					left join customtagimporter_track_attributes as sortattr on
+						customtagimporter_track_attributes.track=sortattr.track and
+						sortattr.type='customtag' and
+						sortattr.attr='[% customsorttag1 %]'
+					[%- END %]
+					[%- IF customtag1artistsort %]
+					left join contributors on
+						customtagimporter_track_attributes.value=contributors.name
+					[%- END %]
+					where
+						customtagimporter_track_attributes.type='customtag' and
+						customtagimporter_track_attributes.attr='[% customtag1 %]'
+					group by customtagimporter_track_attributes.value
+					[%- IF customsorttag1 %]
+					[%- IF customtag1artistsort %]
+					order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+					[%- ELSE %]
+					order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+					[%- END %]
+					[%- ELSIF customtag1artistsort %]
+					order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+					[%- ELSE %]
+					order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+					[%- END %]
+				</menudata>
+				[%- IF customtag2 %]
+				<menu>
+					<id>customtag2</id>
+					<menuname>[% IF level3name %][% level3name %][% ELSE %][% IF customtag3 %][% customtag3 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+					<pathtype>sql</pathtype>
+					<pathtypedata>
+						select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+								where
+									type='customtag' and
+									attr='[% customtag2 %]' and
+									value='{context.itemid}'
+					</pathtypedata>
+					<customitemtype>customtag[% customtag2 %]</customitemtype>
+					<menutype>sql</menutype>
+					<menulinks>alpha</menulinks>
+					<menudata>
+						select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+						join genre_track on
+							genre_track.track=customtagimporter_track_attributes.track and
+							genre_track.genre={genre}
+						[%- IF library or activelibrary %]
+						join multilibrary_track on
+							customtagimporter_track_attributes.track=multilibrary_track.track and
+							multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+						[%- END %]
+						join customtagimporter_track_attributes as attr1 on
+							customtagimporter_track_attributes.track=attr1.track and
+							attr1.type='customtag' and
+							attr1.attr='[% customtag1 %]' and
+							attr1.value='{customtag1}'
+						[%- IF limituppertags %]
+						[%- IF customtag3 %]
+						join customtagimporter_track_attributes as attr3 on
+							customtagimporter_track_attributes.track=attr3.track and
+							attr3.type='customtag' and
+							attr3.attr='[% customtag3 %]'
+						[%- END %]
+						[%- IF customtag4 %]
+						join customtagimporter_track_attributes as attr4 on
+							customtagimporter_track_attributes.track=attr4.track and
+							attr4.type='customtag' and
+							attr4.attr='[% customtag4 %]'
+						[%- END %]
+						[%- END %]
+						[%- IF customsorttag2 %]
+						left join customtagimporter_track_attributes as sortattr on
+							customtagimporter_track_attributes.track=sortattr.track and
+							sortattr.type='customtag' and
+							sortattr.attr='[% customsorttag2 %]'
+						[%- END %]
+						[%- IF customtag2artistsort %]
+						left join contributors on
+							customtagimporter_track_attributes.value=contributors.name
+						[%- END %]
+						where
+							customtagimporter_track_attributes.type='customtag' and
+							customtagimporter_track_attributes.attr='[% customtag2 %]'
+						group by customtagimporter_track_attributes.value
+						[%- IF customsorttag2 %]
+						[%- IF customtag2artistsort %]
+						order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+						[%- ELSE %]
+						order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+						[%- END %]
+						[%- ELSIF customtag2artistsort %]
+						order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+						[%- ELSE %]
+						order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+						[%- END %]
+					</menudata>
+				[%- END %]
+					[%- IF customtag3 %]
+					<menu>
+						<id>customtag3</id>
+						<menuname>[% IF level4name %][% level4name %][% ELSE %][% IF customtag4 %][% customtag4 %]s[% ELSE %]Songs[% END %][% END %]</menuname>
+						<pathtype>sql</pathtype>
+						<pathtypedata>
+							select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+									where
+										type='customtag' and
+										attr='[% customtag3 %]' and
+										value='{context.itemid}'
+						</pathtypedata>
+						<customitemtype>customtag[% customtag3 %]</customitemtype>
+						<menutype>sql</menutype>
+						<menulinks>alpha</menulinks>
+						<menudata>
+							select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+							join genre_track on
+								genre_track.track=customtagimporter_track_attributes.track and
+								genre_track.genre={genre}
+							[%- IF library or activelibrary %]
+							join multilibrary_track on
+								customtagimporter_track_attributes.track=multilibrary_track.track and
+								multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+							[%- END %]
+							join customtagimporter_track_attributes as attr1 on
+								customtagimporter_track_attributes.track=attr1.track and
+								attr1.type='customtag' and
+								attr1.attr='[% customtag1 %]' and
+								attr1.value='{customtag1}'
+							join customtagimporter_track_attributes as attr2 on
+								customtagimporter_track_attributes.track=attr2.track and
+								attr2.type='customtag' and
+								attr2.attr='[% customtag2 %]' and
+								attr2.value='{customtag2}'
+							[%- IF limituppertags %]
+							[%- IF customtag4 %]
+							join customtagimporter_track_attributes as attr4 on
+								customtagimporter_track_attributes.track=attr4.track and
+								attr4.type='customtag' and
+								attr4.attr='[% customtag4 %]'
+							[%- END %]
+							[%- END %]
+							[%- IF customsorttag3 %]
+							left join customtagimporter_track_attributes as sortattr on
+								customtagimporter_track_attributes.track=sortattr.track and
+								sortattr.type='customtag' and
+								sortattr.attr='[% customsorttag3 %]'
+							[%- END %]
+							[%- IF customtag3artistsort %]
+							left join contributors on
+								customtagimporter_track_attributes.value=contributors.name
+							[%- END %]
+							where
+								customtagimporter_track_attributes.type='customtag' and
+								customtagimporter_track_attributes.attr='[% customtag3 %]'
+							group by customtagimporter_track_attributes.value
+							[%- IF customsorttag3 %]
+							[%- IF customtag3artistsort %]
+							order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+							[%- ELSE %]
+							order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+							[%- END %]
+							[%- ELSIF customtag3artistsort %]
+							order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+							[%- ELSE %]
+							order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+							[%- END %]
+						</menudata>
+					[%- END %]
+						[%- IF customtag4 %]
+						<menu>
+							<id>customtag4</id>
+							<menuname>Songs</menuname>
+							<pathtype>sql</pathtype>
+							<pathtypedata>
+								select distinct customtagimporter_track_attributes.value,customtagimporter_track_attributes.value from customtagimporter_track_attributes
+										where
+											type='customtag' and
+											attr='[% customtag4 %]' and
+											value='{context.itemid}'
+							</pathtypedata>
+							<customitemtype>customtag[% customtag4 %]</customitemtype>
+							<menutype>sql</menutype>
+							<menulinks>alpha</menulinks>
+							<menudata>
+								select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value,substr(customtagimporter_track_attributes.valuesort,1,1) from customtagimporter_track_attributes
+								join genre_track on
+									genre_track.track=customtagimporter_track_attributes.track and
+									genre_track.genre={genre}
+								[%- IF library or activelibrary %]
+								join multilibrary_track on
+									customtagimporter_track_attributes.track=multilibrary_track.track and
+									multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+								[%- END %]
+								join customtagimporter_track_attributes as attr1 on
+									customtagimporter_track_attributes.track=attr1.track and
+									attr1.type='customtag' and
+									attr1.attr='[% customtag1 %]' and
+									attr1.value='{customtag1}'
+								join customtagimporter_track_attributes as attr2 on
+									customtagimporter_track_attributes.track=attr2.track and
+									attr2.type='customtag' and
+									attr2.attr='[% customtag2 %]' and
+									attr2.value='{customtag2}'
+								join customtagimporter_track_attributes as attr3 on
+									customtagimporter_track_attributes.track=attr3.track and
+									attr3.type='customtag' and
+									attr3.attr='[% customtag3 %]' and
+									attr3.value='{customtag3}'
+								[%- IF limituppertags %]
+								[%- END %]
+								[%- IF customsorttag4 %]
+								left join customtagimporter_track_attributes as sortattr on
+									customtagimporter_track_attributes.track=sortattr.track and
+									sortattr.type='customtag' and
+									sortattr.attr='[% customsorttag4 %]'
+								[%- END %]
+								[%- IF customtag4artistsort %]
+								left join contributors on
+									customtagimporter_track_attributes.value=contributors.name
+								[%- END %]
+								where
+									customtagimporter_track_attributes.type='customtag' and
+									customtagimporter_track_attributes.attr='[% customtag4 %]'
+								group by customtagimporter_track_attributes.value
+								[%- IF customsorttag4 %]
+								[%- IF customtag4artistsort %]
+								order by ifnull(contributors.namesort,ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))) asc
+								[%- ELSE %]
+								order by ifnull(sortattr.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+								[%- END %]
+								[%- ELSIF customtag4artistsort %]
+								order by ifnull(contributors.namesort,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value)) asc
+								[%- ELSE %]
+								order by ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value) asc
+								[%- END %]
+							</menudata>
+						[%- END %]
+							<menu>
+								<id>track</id>
+								<itemtype>track</itemtype>
+								[% IF !customtracktag %]
+								<itemformat>track</itemformat>
+								[% END %]
+								[%- IF playalltracks %]
+								<playtype>all</playtype>
+								[%- END %]
+								<menutype>sql</menutype>
+								<option>
+									<id>byalbum</id>
+									<name>Sort by album</name>
+									<menulinks>number</menulinks>
+									<keyword name="orderby" value="tracks.album,tracks.disc asc,tracks.tracknum asc,[% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %] asc"/>
+								</option>
+								<option>
+									<id>bytitle</id>
+									<name>Sort by title</name>
+									<menulinks>alpha</menulinks>
+									<keyword name="orderby" value="[% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %] asc"/>
+								</option>
+								<menudata>
+									select tracks.id,[% IF customtracktag %]ifnull(tracktag.value,tracks.title)[% ELSE %]tracks.title[% END %],substr([% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %],1,1) from tracks
+									join genre_track on
+										genre_track.track=tracks.id and
+										genre_track.genre={genre}
+									join customtagimporter_track_attributes attr1 on
+										tracks.id=attr1.track and
+										attr1.type='customtag' and
+										attr1.attr='[% customtag1 %]' and
+										attr1.value='{customtag1}'
+									[%- IF customtag2 %]
+									join customtagimporter_track_attributes attr2 on
+										tracks.id=attr2.track and
+										attr2.type='customtag' and
+										attr2.attr='[% customtag2 %]' and
+										attr2.value='{customtag2}'
+									[%- END %]
+									[%- IF customtag3 %]
+									join customtagimporter_track_attributes attr3 on
+										tracks.id=attr3.track and
+										attr3.type='customtag' and
+										attr3.attr='[% customtag3 %]' and
+										attr3.value='{customtag3}'
+									[%- END %]
+									[%- IF customtag4 %]
+									join customtagimporter_track_attributes attr4 on
+										tracks.id=attr4.track and
+										attr4.type='customtag' and
+										attr4.attr='[% customtag4 %]' and
+										attr4.value='{customtag4}'
+									[%- END %]
+									[%- IF library or activelibrary %]
+									join multilibrary_track on
+										tracks.id=multilibrary_track.track and
+										multilibrary_track.library=[% IF activelibrary %]{clientproperty:plugin.multilibrary:activelibraryno}[% ELSE %][% library %][% END %]
+									[%- END %]
+									[%- IF customtracktag %]
+									left join customtagimporter_track_attributes tracktag on
+										tracks.id=tracktag.track and
+										tracktag.type='customtag' and
+										tracktag.attr='[% customtracktag %]'
+									[%- END %]
+									where
+										tracks.audio=1
+									group by tracks.id
+									order by {orderby}
+								</menudata>
+								<menu>
+									<id>trackdetails</id>
+									<menutype>trackdetails</menutype>
+									<menudata>track|0[% IF activelibrary %]|library={clientproperty:plugin.multilibrary:activelibraryno}[% ELSIF library %]|library=[% library %][% END %]</menudata>
+								</menu>
+							</menu>
+						[%- IF customtag4 %]
+						</menu>
+						[%- END %]
+					[%- IF customtag3 %]
+					</menu>
+					[%- END %]
+				[%- IF customtag2 %]
+				</menu>
+				[%- END %]
+			</menu>
+		</menu>
+	</menu>
+</custombrowse>

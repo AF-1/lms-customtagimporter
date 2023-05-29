@@ -1,10 +1,9 @@
 <script type="text/javascript">function inprogress(elementid){document.getElementById(elementid).className = "inprogress";}</script>
 <style>.inputfield{margin-left:4px}.btn{margin-top:-1px;margin-left:4px;padding:3px}.btn2{margin-left:10px}.btn3{margin-left:25px}.statusmsgwrapper{padding-left:294px;}:root{--cti-scanstat-main-color:red;--cti-scanstat-text-shadow-color:rgba(0,0,0,0)}.status,.lmsscan{color:var(--cti-scanstat-main-color) !important;font-size:120%}.success{color:green !important;}.scanstatus:after{font-size:180%;content:' .';animation:dots 1.8s steps(5,end)infinite}@keyframes dots{0%,20%{color:var(--cti-scanstat-text-shadow-color);text-shadow:.25em 0 0 var(--cti-scanstat-text-shadow-color),.5em 0 0 var(--cti-scanstat-text-shadow-color)}40%{color:var(--cti-scanstat-main-color);text-shadow:.25em 0 0 var(--cti-scanstat-text-shadow-color),.5em 0 0 var(--cti-scanstat-text-shadow-color)}60%{text-shadow:.25em 0 0 var(--cti-scanstat-main-color),.5em 0 0 var(--cti-scanstat-text-shadow-color)}80%,100%{text-shadow:.25em 0 0 var(--cti-scanstat-main-color),.5em 0 0 var(--cti-scanstat-main-color)}}#scanProgressPercentageWrapper{display:none;width:80px;margin: 8px 0 10px 294px;background-color:gray;}#scanProgressPercentageBar{width:0%;height:4px;background-color:#04AA6D;}@-webkit-keyframes Pulse{from{color:#630030;-webkit-text-shadow:0 0 2px transparent}50%{color:#e33100;-webkit-text-shadow:0 0 5px #e33100}to{color:#630030;-webkit-text-shadow:0 0 2px transparent}}@keyframes Pulse{from{color:#630030;text-shadow:0 0 2px transparent}50%{color:#e33100;text-shadow:0 0 5px #e33100}to{color:#630030;text-shadow:0 0 2px transparent}}.inprogress{padding-left:15px;-webkit-animation-name:Pulse;animation-name:Pulse;-webkit-animation-duration:2s;animation-duration:2s;-webkit-animation-iteration-count:infinite;animation-iteration-count:infinite}.hide{visibility:hidden;}.githublink{padding-left:22px;}</style>
 
+[% page = "PLUGIN_CUSTOMTAGIMPORTER" %]
 [% PROCESS settings/header.html %]
-<br>
-<span[% IF systemSkin != "material" %] class="githublink"[% END %]><a href="[% "PLUGIN_CUSTOMTAGIMPORTER_GITHUB_LINK" | string %]" target="_blank" rel="noopener noreferrer"><b>[% "PLUGIN_CUSTOMTAGIMPORTER_GITHUB_LINK_TEXT" | string %]</b></a></span>
-<br>
+[% PROCESS plugins/CustomTagImporter/settings/subpage_chooser.html %]
 
 	<div class="statusmsgwrapper">
 		<p id="statusmsg" class="status"></p>

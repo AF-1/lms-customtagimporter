@@ -20,12 +20,12 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-package Plugins::CustomTagImporter::Settings;
+package Plugins::CustomTagImporter::Settings::Basic;
 
 use strict;
 use warnings;
 use utf8;
-use base qw(Slim::Web::Settings);
+use base qw(Plugins::CustomTagImporter::Settings::BaseSettings);
 
 use File::Basename;
 use File::Next;
@@ -39,12 +39,31 @@ my $prefs = preferences('plugin.customtagimporter');
 my $log = logger('plugin.customtagimporter');
 my $plugin;
 
+sub new {
+	my $class = shift;
+	$plugin = shift;
+	$class->SUPER::new($plugin,1);
+}
+
 sub name {
 	return Slim::Web::HTTP::CSRF->protectName('PLUGIN_CUSTOMTAGIMPORTER');
 }
 
 sub page {
-	return Slim::Web::HTTP::CSRF->protectURI('plugins/CustomTagImporter/settings/tags.html');
+	return Slim::Web::HTTP::CSRF->protectURI('plugins/CustomTagImporter/settings/basic.html');
+}
+
+sub currentPage {
+	return Slim::Utils::Strings::string('PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS');
+}
+
+sub pages {
+	my %page = (
+		'name' => Slim::Utils::Strings::string('PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS'),
+		'page' => page(),
+	);
+	my @pages = (\%page);
+	return \@pages;
 }
 
 sub prefs {

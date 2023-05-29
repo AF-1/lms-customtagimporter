@@ -1,0 +1,26 @@
+<style>.padleft{padding-left:20px;}</style>
+[% page = "PLUGIN_CUSTOMTAGIMPORTER" %]
+[% PROCESS settings/header.html %]
+
+[% PROCESS plugins/PotPourri/settings/subpage_chooser.html %]
+
+<span class="padleft">[% "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_HEADING" | string %]</span>
+<br>
+[% IF customtagcount %]
+	[% FOREACH attr = attrvaluelist.keys.sort %]
+		[% WRAPPER setting title=attr desc="" %]
+			<select name="" multiple size="10">
+			[%- FOREACH attrvalue = attrvaluelist.$attr.keys.sort %]
+				<option value="">[% FILTER truncate(110, '&hellip;') %][% attrvalue | html %][% END %]</option>
+			[%- END %]
+			</select>
+			<br><br>
+		[% END %]
+	[% END %]
+	<span class="padleft">[% "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_INFO" | string %]</span>
+[% ELSE %]
+<div>[% "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_NOCUSTOMTAGSFOUND" | string %]</div>
+[% END %]
+<br>
+
+[% PROCESS settings/footer.html %]

@@ -38,7 +38,8 @@ use Scalar::Util qw(blessed);
 use Data::Dumper;
 
 use Plugins::CustomTagImporter::Common ':all';
-use Plugins::CustomTagImporter::Settings;
+use Plugins::CustomTagImporter::Settings::Basic;
+use Plugins::CustomTagImporter::Settings::TagList;
 use Plugins::CustomTagImporter::Importer;
 use Plugins::CustomTagImporter::CBTemplateReader;
 
@@ -61,8 +62,10 @@ sub initPlugin {
 	Slim::Control::Request::subscribe(\&_setRefreshCBTimer, [['rescan'], ['done']]);
 
 	if (!$::noweb) {
-		require Plugins::CustomTagImporter::Settings;
-		Plugins::CustomTagImporter::Settings->new($class);
+		require Plugins::CustomTagImporter::Settings::Basic;
+		require Plugins::CustomTagImporter::Settings::TagList;
+		Plugins::CustomTagImporter::Settings::Basic->new($class);
+		Plugins::CustomTagImporter::Settings::TagList->new($class);
 	}
 }
 

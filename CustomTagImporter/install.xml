@@ -3,11 +3,11 @@
 	<id>afac7b8e-07fd-7c77-b8af-e6e996e8c140</id>
 	<name>PLUGIN_CUSTOMTAGIMPORTER</name>
 	<module>Plugins::CustomTagImporter::Plugin</module>
-	<version>0.4.0</version>
+	<version>0.4.1</version>
 	<description>PLUGIN_CUSTOMTAGIMPORTER_DESC</description>
 	<creator>AF</creator>
 	<importmodule>Plugins::CustomTagImporter::Importer</importmodule>
-	<optionsURL>plugins/CustomTagImporter/settings/tags.html</optionsURL>
+	<optionsURL>plugins/CustomTagImporter/settings/basic.html</optionsURL>
 	<homepageURL>https://github.com/AF-1/lms-customtagimporter</homepageURL>
 	<defaultState>enabled</defaultState>
 	<targetApplication>

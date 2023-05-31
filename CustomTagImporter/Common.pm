@@ -47,7 +47,7 @@ my %dumpedTagNames;
 
 use base 'Exporter';
 our %EXPORT_TAGS = (
-	all => [qw( getCurrentDBH commit rollback initDatabase rescan abortScan isScanning)],
+	all => [qw( getCurrentDBH commit rollback initDatabase rescan abortScan isScanning countAvailableCustomTags)],
 );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{all} } );
 
@@ -1152,6 +1152,17 @@ sub getRawMP3Tags {
 	}
 }
 
+sub countAvailableCustomTags {
+	my $dbh = getCurrentDBH();
+	my $customTagSql = "select count(distinct attr) from customtagimporter_track_attributes where type='customtag' group by attr";
+	my $thisCount;
+	my $sth = $dbh->prepare($customTagSql);
+	$sth->execute();
+	$sth->bind_columns(undef, \$thisCount);
+	$sth->fetch();
+	$sth->finish;
+	return $thisCount;
+}
 
 sub getCurrentDBH {
 	return Slim::Schema->storage->dbh();

@@ -58,7 +58,6 @@ sub initPlugin {
 
 	initPrefs();
 	refreshTitleFormats();
-
 	Slim::Control::Request::subscribe(\&_setRefreshCBTimer, [['rescan'], ['done']]);
 
 	if (!$::noweb) {

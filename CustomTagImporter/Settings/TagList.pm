@@ -80,7 +80,7 @@ sub handler {
 sub beforeRender {
 	my ($class, $paramRef) = @_;
 	my $dbh = Slim::Schema->storage->dbh();
-	my $customTagSql = "select attr,value from customtagimporter_track_attributes where type='customtag' group by value";
+	my $customTagSql = "select attr,value,count(distinct id) from customtagimporter_track_attributes where type='customtag' group by value";
 	my %attrValHash = ();
 
 	eval {
@@ -93,20 +93,38 @@ sub beforeRender {
 
 		my $attr;
 		my $value;
+		my $valCount;
 		$sth->bind_col(1, \$attr);
 		$sth->bind_col(2, \$value);
+		$sth->bind_col(3, \$valCount);
 		while ($sth->fetch()) {
-			$attrValHash{$attr}{$value} = 1;
+			$attrValHash{$attr}{$value} = $valCount;
 		}
 	};
 	if ($@) {
 		$log->error("Running: $customTagSql got error:\n$@");
 	}
 
+	my %attrTotalCount = ();
+	if (scalar keys %attrValHash > 0) {
+		foreach my $thisAttr (keys %attrValHash) {
+			my $count = 0;
+			my $thisAttrHash = $attrValHash{$thisAttr};
+
+			foreach my $thisValue (keys %{$thisAttrHash}) {
+				$count += $attrValHash{$thisAttr}{$thisValue};
+			}
+			$log->debug("count for $thisAttr = " . $count);
+			$attrTotalCount{$thisAttr} = $count;
+		}
+	}
+
 	$log->debug('attrValHash = '.Dumper(\%attrValHash));
+	$log->debug('attrTotalCount = '.Dumper(\%attrTotalCount));
 	$log->debug('customtagcount = '.scalar keys %attrValHash);
 
 	$paramRef->{'attrvaluelist'} = \%attrValHash;
+	$paramRef->{'attrTotalCount'} = \%attrTotalCount;
 	$paramRef->{'customtagcount'} = scalar keys %attrValHash;
 }
 

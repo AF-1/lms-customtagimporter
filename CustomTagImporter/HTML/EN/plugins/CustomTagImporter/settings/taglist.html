@@ -8,10 +8,12 @@
 <br>
 [% IF customtagcount %]
 	[% FOREACH attr = attrvaluelist.keys.sort %]
-		[% WRAPPER setting title=attr desc="" %]
+		[%- IF attrTotalCount.$attr == 1; settingstitle = attr _ " (" _ attrTotalCount.$attr _ " track)"; ELSE; settingstitle = attr _ " (" _ attrTotalCount.$attr _ " tracks)"; END; %]
+		[% WRAPPER setting title=settingstitle desc="" %]
 			<select name="" multiple size="10">
+			[%- valuelistforthisattr = attrvaluelist.$attr %]
 			[%- FOREACH attrvalue = attrvaluelist.$attr.keys.sort %]
-				<option value="">[% FILTER truncate(110, '&hellip;') %][% attrvalue | html %][% END %]</option>
+			<option value="">[% FILTER truncate(110, '&hellip;') %][% attrvalue %][% END %]&nbsp;&nbsp;&nbsp;([% valuelistforthisattr.$attrvalue %][% IF valuelistforthisattr.$attrvalue == 1 %] track[% ELSE %] tracks[% END %])&nbsp;</option>
 			[%- END %]
 			</select>
 			<br><br>
@@ -22,5 +24,4 @@
 <div>[% "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_NOCUSTOMTAGSFOUND" | string %]</div>
 [% END %]
 <br>
-
 [% PROCESS settings/footer.html %]

@@ -31,7 +31,6 @@ use Slim::Utils::Prefs;
 use Slim::Utils::Misc;
 use Slim::Utils::Strings;
 use Slim::Utils::Strings qw(string cstring);
-use Data::Dumper;
 
 my $prefs = preferences('plugin.customtagimporter');
 my $log = logger('plugin.customtagimporter');
@@ -85,7 +84,7 @@ sub beforeRender {
 
 	eval {
 		my $sth = $dbh->prepare($customTagSql);
-		$log->debug("Executing: $customTagSql");
+		main::DEBUGLOG && $log->is_debug && $log->debug("Executing: $customTagSql");
 		$sth->execute() or do {
 			$log->error("Error executing: $customTagSql");
 			$customTagSql = undef;
@@ -114,14 +113,14 @@ sub beforeRender {
 			foreach my $thisValue (keys %{$thisAttrHash}) {
 				$count += $attrValHash{$thisAttr}{$thisValue};
 			}
-			$log->debug("count for $thisAttr = " . $count);
+			main::DEBUGLOG && $log->is_debug && $log->debug("count for $thisAttr = " . $count);
 			$attrTotalCount{$thisAttr} = $count;
 		}
 	}
 
-	$log->debug('attrValHash = '.Dumper(\%attrValHash));
-	$log->debug('attrTotalCount = '.Dumper(\%attrTotalCount));
-	$log->debug('customtagcount = '.scalar keys %attrValHash);
+	main::DEBUGLOG && $log->is_debug && $log->debug('attrValHash = '.Data::Dump::dump(\%attrValHash));
+	main::DEBUGLOG && $log->is_debug && $log->debug('attrTotalCount = '.Data::Dump::dump(\%attrTotalCount));
+	main::DEBUGLOG && $log->is_debug && $log->debug('customtagcount = '.scalar keys %attrValHash);
 
 	$paramRef->{'attrvaluelist'} = \%attrValHash;
 	$paramRef->{'attrTotalCount'} = \%attrTotalCount;

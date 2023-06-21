@@ -34,7 +34,6 @@ use File::Slurp;
 use XML::Simple;
 use FindBin qw($Bin);
 use Cache::Cache qw($EXPIRES_NEVER);
-use Data::Dumper;
 
 my $serverPrefs = preferences('server');
 my $log = Slim::Utils::Log->addLogCategory({
@@ -99,7 +98,7 @@ sub getTemplates {
 			my $timestamp = (stat (catdir($templateDir, $item)) )[9];
 			if (defined($cacheItems)) {
 				if (defined($cacheItems->{'items'}->{$item}) && $cacheItems->{'items'}->{$item}->{'timestamp'}>$timestamp) {
-					$log->debug("Reading $item from cache");
+					main::DEBUGLOG && $log->is_debug && $log->debug("Reading $item from cache");
 					push @result, $cacheItems->{'items'}->{$item}->{'data'};
 					next;
 				}
@@ -136,7 +135,7 @@ sub readTemplateData {
 	my $dir = shift;
 	my $template = shift;
 	my $extension = shift;
-	$log->debug("Loading template data for $template");
+	main::DEBUGLOG && $log->is_debug && $log->debug("Loading template data for $template");
 
 	if (!defined($extension)) {
 		$extension = "template";
@@ -161,7 +160,7 @@ sub readTemplateConfiguration {
 	my $path = shift;
 	my $templateType = shift;
 	my $raw = shift;
-	$log->debug("Loading template configuration for $templateId");
+	main::DEBUGLOG && $log->is_debug && $log->debug("Loading template configuration for $templateId");
 
 	# read_file from File::Slurp
 	my $content = eval { read_file($path) };
@@ -187,7 +186,7 @@ sub parseTemplateContent {
 	if ($content) {
 		$content = Slim::Utils::Unicode::utf8decode($content, 'utf8');
 		my $xml = eval { XMLin($content, forcearray => ["parameter"], keyattr => []) };
-		$log->debug('xml = '.Dumper($xml));
+		main::DEBUGLOG && $log->is_debug && $log->debug('xml = '.Data::Dump::dump($xml));
 		if ($@) {
 			$log->error("Failed to parse $templateType configuration for $id because:\n$@");
 		} else {

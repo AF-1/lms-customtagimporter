@@ -33,7 +33,6 @@ use Slim::Utils::Log;
 use File::Spec::Functions qw(:ALL);
 use Plugins::CustomTagImporter::MP3::Info;
 use POSIX qw(floor);
-use Data::Dumper;
 use Time::HiRes qw(time);
 
 my $prefs = preferences('plugin.customtagimporter');
@@ -190,7 +189,7 @@ sub initDatabase {
 		$log->error("Database error: $DBI::errstr");
 	}
 	$sth->finish();
-	$log->debug($tableExists ? 'CTI table table found.' : 'No CTI table table found.');
+	main::DEBUGLOG && $log->is_debug && $log->debug($tableExists ? 'CTI table table found.' : 'No CTI table table found.');
 
 	unless ($tableExists) {
 		my $createDBsql = "CREATE TABLE IF NOT EXISTS customtagimporter_track_attributes (
@@ -212,7 +211,7 @@ create index if not exists type_attr_valuesort_idx on customtagimporter_track_at
 create index if not exists attr_type_idx on customtagimporter_track_attributes (attr, type);
 create index if not exists track_attr_value_cstrackidx on customtagimporter_track_attributes (track, attr, value, valuesort);";
 
-		$log->debug('CustomTagImporter: Creating database tables + indices');
+		main::DEBUGLOG && $log->is_debug && $log->debug('CustomTagImporter: Creating database tables + indices');
 		executeSQLstat($createDBsql);
 	}
 }
@@ -234,7 +233,7 @@ sub executeSQLstat {
 
 		if ($line =~ /;/ && $inStatement) {
 			$statement .= $line;
-			$log->debug("Executing SQL statement: [$statement]");
+			main::DEBUGLOG && $log->is_debug && $log->debug("Executing SQL statement: [$statement]");
 			eval { $dbh->do($statement) };
 			if ($@) {
 				$log->error("Couldn't execute SQL statement: [$statement] : [$@]");
@@ -250,17 +249,17 @@ sub executeSQLstat {
 
 sub rescan {
 	my $importerCall = shift;
-	$log->debug('Starting rescan');
+	main::DEBUGLOG && $log->is_debug && $log->debug('Starting rescan');
 
 	if (!$importerCall && $prefs->get('scanningInProgress')) {
-		$log->debug('CustomTagImporter: Scanning already in progress, wait until it\'s finished');
+		main::DEBUGLOG && $log->is_debug && $log->debug('CustomTagImporter: Scanning already in progress, wait until it\'s finished');
 		return;
 	}
 
 	$prefs->set('scanprogresspercentage', 0);
 
 	if (!$prefs->get('customtags') && !$prefs->get('ratingtags')) {
-		$log->debug('CustomTagImporter: scanning requires that you define at least 1 custom or rating tag');
+		main::DEBUGLOG && $log->is_debug && $log->debug('CustomTagImporter: scanning requires that you define at least 1 custom or rating tag');
 		$prefs->set('scanResult', 4);
 		return;
 	}
@@ -296,7 +295,7 @@ sub initTrackScan {
 
 	$scanningContext->{'noOfTracks'} = scalar (@libraryTrackIDs);
 	$scanningContext->{'currentTrackNo'} = 0;
-	$log->debug('Number of tracks to scan: '.$scanningContext->{'noOfTracks'});
+	main::DEBUGLOG && $log->is_debug && $log->debug('Number of tracks to scan: '.$scanningContext->{'noOfTracks'});
 	$scanningContext->{'importerCall'} = $importerCall;
 
 	if ($importerCall) {
@@ -313,7 +312,7 @@ sub scanTracksForImporter {
 		getScanTrackAttributes($_, $scanningContext);
 
 		if ($scanningContext->{'currentTrackNo'} > 0 && $scanningContext->{'currentTrackNo'} % 1000 == 0) {
-			$log->info('Scanned '.$scanningContext->{'currentTrackNo'}.' out of '.$scanningContext->{'noOfTracks'}.' tracks so far');
+			main::INFOLOG && $log->is_info && $log->info('Scanned '.$scanningContext->{'currentTrackNo'}.' out of '.$scanningContext->{'noOfTracks'}.' tracks so far');
 		}
 	}
 	exitScan($scanningContext);
@@ -342,8 +341,8 @@ sub getScanTrackAttributes {
 	if (defined($trackID)) {
 		my $track = Slim::Schema->rs('Track')->find($trackID);
 		my $dbh = getCurrentDBH();
-		$log->debug('Scanning track '.$scanningContext->{'currentTrackNo'}.' of '.$scanningContext->{'noOfTracks'});
-		$log->debug('Scanning track: '.$track->title);
+		main::DEBUGLOG && $log->is_debug && $log->debug('Scanning track '.$scanningContext->{'currentTrackNo'}.' of '.$scanningContext->{'noOfTracks'});
+		main::DEBUGLOG && $log->is_debug && $log->debug('Scanning track: '.$track->title);
 
 		my $attributes;
 		eval { $attributes = scanCustomTagTrack($track, $scanningContext); };
@@ -402,7 +401,7 @@ sub getScanTrackAttributes {
 
 sub exitScan {
 	my $scanningContext = shift;
-	$log->debug('Optimizing SQLite database');
+	main::DEBUGLOG && $log->is_debug && $log->debug('Optimizing SQLite database');
 	my $dbh = getCurrentDBH();
 	$dbh->do("ANALYZE customtagimporter_track_attributes");
 	commit($dbh);
@@ -416,13 +415,13 @@ sub exitScan {
 	# scan result: 1 = success, 2 = aborted, 3 = errors
 	if ($scanningAborted == 1) {
 		$prefs->set('scanResult', 2);
-		$log->info('Rescan aborted after '.(time()-($scanningContext->{'scanStartTime'})).' seconds. Scanned '.$scanningContext->{'currentTrackNo'}.' out of '.$scanningContext->{'noOfTracks'}.' tracks.');
+		main::INFOLOG && $log->is_info && $log->info('Rescan aborted after '.(time()-($scanningContext->{'scanStartTime'})).' seconds. Scanned '.$scanningContext->{'currentTrackNo'}.' out of '.$scanningContext->{'noOfTracks'}.' tracks.');
 	} elsif ($errors > 0) {
 		$prefs->set('scanResult', 3);
-		$log->info('Rescan completed (with errors) after '.(time()-($scanningContext->{'scanStartTime'})).' seconds.');
+		main::INFOLOG && $log->is_info && $log->info('Rescan completed (with errors) after '.(time()-($scanningContext->{'scanStartTime'})).' seconds.');
 	} else {
 		$prefs->set('scanResult', 1);
-		$log->info('Rescan completed after '.(time()-($scanningContext->{'scanStartTime'})).' seconds.');
+		main::INFOLOG && $log->is_info && $log->info('Rescan completed after '.(time()-($scanningContext->{'scanStartTime'})).' seconds.');
 	}
 
 	# optional: dump tag names to file
@@ -448,7 +447,7 @@ sub exitScan {
 sub abortScan {
 	if ($prefs->get('scanningInProgress') > 0) {
 		$scanningAborted = 1;
-		$log->debug('CustomTagImporter: Aborting scanning');
+		main::DEBUGLOG && $log->is_debug && $log->debug('CustomTagImporter: Aborting scanning');
 		return;
 	}
 }
@@ -477,7 +476,7 @@ sub clearDBtable {
 		$log->error("Database error: $DBI::errstr");
 		$errors++;
 	} else {
-		$log->debug('Deleted old database table. Took '.(time()-$startTime).' seconds');
+		main::DEBUGLOG && $log->is_debug && $log->debug('Deleted old database table. Took '.(time()-$startTime).' seconds');
 	}
 	return;
 }
@@ -489,7 +488,7 @@ sub scanCustomTagTrack {
 	my @resultVirtual = ();
 	my @resultSort = ();
 
-	$log->debug('Scanning track: '.$track->title);
+	main::DEBUGLOG && $log->is_debug && $log->debug('Scanning track: '.$track->title);
 	my $tags = Slim::Formats->readTags($track->url);
 
 	# dump tag names to file or log tag names + values if debug. But don't if importer call.
@@ -497,14 +496,14 @@ sub scanCustomTagTrack {
 		for my $t (keys %{$tags}) {
 			if ($log->is_debug) {
 				if ($t ne 'APIC' && $t ne 'GEOB' && $t ne 'PRIV' && $t ne 'ARTWORK' && $t ne 'ASFLeakyBucketPairs' && $t ne 'WM/Picture') {
-					$log->debug("Got tag: $t = ".$tags->{$t});
+					main::DEBUGLOG && $log->is_debug && $log->debug("Got tag: $t = ".$tags->{$t});
 				} else {
-					$log->debug("Got tag: $t = (binary data)");
+					main::DEBUGLOG && $log->is_debug && $log->debug("Got tag: $t = (binary data)");
 				}
 				if (ref($tags->{$t}) eq 'ARRAY' && $t ne 'APIC' && $t ne 'GEOB' && $t ne 'PRIV' && $t ne 'PRIV' && $t ne 'ASFLeakyBucketPairs' && $t ne 'WM/Picture') {
 					my $array = $tags->{$t};
 					for my $item (@{$array}) {
-						$log->debug("Got array item: $item");
+						main::DEBUGLOG && $log->is_debug && $log->debug("Got array item: $item");
 					}
 				}
 			} else {
@@ -606,7 +605,7 @@ sub scanCustomTagTrack {
 							if (scalar @result > 0) {
 								my %alreadyHasRATINGtag = map { $_->{'name'} => $_ } @result;
 								if ($alreadyHasRATINGtag{'RATING'}) {
-									$log->debug('Ignoring POP/M tags. Already got a rating value from another tag.');
+									main::DEBUGLOG && $log->is_debug && $log->debug('Ignoring POP/M tags. Already got a rating value from another tag.');
 									next;
 								}
 							}
@@ -673,12 +672,12 @@ sub scanCustomTagTrack {
 							if (scalar @result > 0) {
 								my %alreadyHasRATINGtag = map { $_->{'name'} => $_ } @result;
 								if ($alreadyHasRATINGtag{'RATING'}) {
-									$log->debug("Already got a rating value from another tag. Will use new rating value $ratingNumber from tag '$tag'");
+									main::DEBUGLOG && $log->is_debug && $log->debug("Already got a rating value from another tag. Will use new rating value $ratingNumber from tag '$tag'");
 									@result = grep { $_->{'name'} ne 'RATING' } @result;
 								}
 							}
 
-							$log->debug("Using $tag, adjusted rating is: $ratingNumber");
+							main::DEBUGLOG && $log->is_debug && $log->debug("Using $tag, adjusted rating is: $ratingNumber");
 							my %item = (
 								'name' => 'RATING',
 								'value' => $ratingNumber
@@ -770,20 +769,20 @@ sub scanCustomTagTrack {
 					# handle DECADE = combine YEAR(exp = ^\d\d\d)|YEAR(text=0)
 					# handle ARTISTSORT = combine ARTIST(exp = ^.*\s(.*)$)|ARTIST(text=)|ARTIST(exp = ^(.*)\s)
 					if ($customTagMapping =~ /^\s*(.*?)\s* = \s*(oneof|combine|as)\s+(.+)\s*$/) {
-						$log->debug("Handling custom mapping: $customTagMapping");
+						main::DEBUGLOG && $log->is_debug && $log->debug("Handling custom mapping: $customTagMapping");
 						my $mappingType = $2;
 						my @values = ();
 						my $tag = uc($1);
 						my @parts = split(/\|/, $3);
-						#$log->debug("GOT: ".Dumper(\@parts));
+						#main::DEBUGLOG && $log->is_debug && $log->debug("GOT: ".Data::Dump::dump(\@parts));
 						my $lastPart = 0;
 						for my $part (@parts) {
-							$log->debug("Handling custom mapping part $part");
+							main::DEBUGLOG && $log->is_debug && $log->debug("Handling custom mapping part $part");
 							if ($part =~ /^\s*([A-Za-z0-9_\/ ]+)\(exp = (.*)\)\s*$/) {
 								if (exists $resultHash->{uc($1)}) {
 									my $partTag = uc($1);
 									my $partExp = $2;
-									$log->debug("Handling custom mapping exp part $partTag, $partExp");
+									main::DEBUGLOG && $log->is_debug && $log->debug("Handling custom mapping exp part $partTag, $partExp");
 									my $partTagValues = $resultHash->{$partTag};
 									if (ref($partTagValues) eq 'ARRAY') {
 										my $orgValue = undef;
@@ -796,10 +795,10 @@ sub scanCustomTagTrack {
 										}
 										my $i = 0;
 										for my $partTagValue (@{$partTagValues}) {
-											$log->debug("Checking $partTagValue against $partExp");
+											main::DEBUGLOG && $log->is_debug && $log->debug("Checking $partTagValue against $partExp");
 											if ($partTagValue =~ /$partExp/) {
 												my $currentValue = $1;
-												$log->debug("Checking $partTagValue against $partExp matched! ($currentValue)");
+												main::DEBUGLOG && $log->is_debug && $log->debug("Checking $partTagValue against $partExp matched! ($currentValue)");
 												if ($mappingType eq "oneof" || $mappingType eq "as") {
 													push @values, $currentValue;
 													$lastPart = 1;
@@ -824,10 +823,10 @@ sub scanCustomTagTrack {
 											$i++;
 										}
 									} else {
-										$log->debug("Checking $partTagValues against $partExp");
+										main::DEBUGLOG && $log->is_debug && $log->debug("Checking $partTagValues against $partExp");
 										if ($partTagValues =~ /$partExp/) {
 											my $currentValue = $1;
-											$log->debug("Checking $partTagValues against $partExp matched! ($currentValue)");
+											main::DEBUGLOG && $log->is_debug && $log->debug("Checking $partTagValues against $partExp matched! ($currentValue)");
 											if ($mappingType eq "oneof" || $mappingType eq "as") {
 												push @values, $currentValue;
 												last;
@@ -844,7 +843,7 @@ sub scanCustomTagTrack {
 							} elsif ($part =~ /^\s*([A-Za-z0-9_\/ ]+)\(text=(.*)\)\s*$/) {
 								if (exists $resultHash->{uc($1)}) {
 									my $currentValue = $2;
-									$log->debug("Handling custom mapping text part ".uc($1).", $currentValue");
+									main::DEBUGLOG && $log->is_debug && $log->debug("Handling custom mapping text part ".uc($1).", $currentValue");
 									if ($mappingType eq "oneof" || $mappingType eq "as") {
 										push @values, $currentValue;
 										last;
@@ -860,7 +859,7 @@ sub scanCustomTagTrack {
 								if (exists $resultHash->{uc($1)}) {
 									my $partTag = uc($1);
 									my $partTagValues = $resultHash->{$partTag};
-									$log->debug("Handling custom mapping tag part $partTag");
+									main::DEBUGLOG && $log->is_debug && $log->debug("Handling custom mapping tag part $partTag");
 									if (ref($partTagValues) eq 'ARRAY') {
 										my $orgValue = undef;
 										if (scalar(@values) == 1) {
@@ -910,7 +909,7 @@ sub scanCustomTagTrack {
 								last;
 							}
 						}
-						#$log->debug("Got mapping tags: ".Dumper(\@values));
+						#main::DEBUGLOG && $log->is_debug && $log->debug("Got mapping tags: ".Data::Dump::dump(\@values));
 
 						if (scalar(@values) > 0) {
 							if (scalar(@values) == 1) {
@@ -979,9 +978,9 @@ sub scanCustomTagTrack {
 sub rateScannedTracks {
 	my $scanningContext = shift;
 	if ($prefs->get('scanningInProgress') > 0) {
-		$log->debug("Active scan process detected. Can't write CTI rating tag values to LMS database");
+		main::DEBUGLOG && $log->is_debug && $log->debug("Active scan process detected. Can't write CTI rating tag values to LMS database");
 	} else {
-		$log->debug('Writing ratings from CTI rating tags to LMS database');
+		main::DEBUGLOG && $log->is_debug && $log->debug('Writing ratings from CTI rating tags to LMS database');
 	}
 
 	my $started = my $totalTimeStarted = time();
@@ -1001,10 +1000,10 @@ sub rateScannedTracks {
 		$ratedCTItracks{$urlmd5} = $CTIratingValue;
 	}
 	$sth->finish();
-	$log->debug('Pt 1: Getting rated CTI tracks and rating values took '.(time() - $started).' seconds.');
+	main::DEBUGLOG && $log->is_debug && $log->debug('Pt 1: Getting rated CTI tracks and rating values took '.(time() - $started).' seconds.');
 
 	if (scalar keys %ratedCTItracks == 0) {
-		$log->info('CTI table does not contain tracks with rating tags!');
+		main::INFOLOG && $log->is_info && $log->info('CTI table does not contain tracks with rating tags!');
 		return;
 	}
 
@@ -1024,7 +1023,7 @@ sub rateScannedTracks {
 		};
 	}
 	$unrate_sth->finish();
-	$log->debug('Pt 2: Unrating tracks in LMS db took '.(time() - $started).' seconds.');
+	main::DEBUGLOG && $log->is_debug && $log->debug('Pt 2: Unrating tracks in LMS db took '.(time() - $started).' seconds.');
 
 	## write ratings for rated CTI tracks to LMS tracks_persistent
 
@@ -1051,12 +1050,12 @@ sub rateScannedTracks {
 		}
 	}
 	$rate_sth->finish();
-	$log->debug('Pt 3: Writing ratings for rated CTI tracks to LMS tracks_persistent took '.(time() - $started).' seconds.');
+	main::DEBUGLOG && $log->is_debug && $log->debug('Pt 3: Writing ratings for rated CTI tracks to LMS tracks_persistent took '.(time() - $started).' seconds.');
 
 	if ($scanningContext->{'isReset'}) {
-		$log->info('Resetting LMS ratings to CTI rating values took '.(time() - $totalTimeStarted).' seconds.');
+		main::INFOLOG && $log->is_info && $log->info('Resetting LMS ratings to CTI rating values took '.(time() - $totalTimeStarted).' seconds.');
 	} else {
-		$log->info('Writing CTI rating values to LMS database took '.(time() - $totalTimeStarted).' seconds.');
+		main::INFOLOG && $log->is_info && $log->info('Writing CTI rating values to LMS database took '.(time() - $totalTimeStarted).' seconds.');
 	}
 
 	Plugins::RatingsLight::Plugin::refreshAll(1) if !$scanningContext->{'importerCall'} && $RLenabled;
@@ -1141,13 +1140,13 @@ sub getRawMP3Tags {
 				# Remove null character at end
 				$value =~ s/\0$//;
 				$value =~ s/^\0//;
-				$log->debug("Got raw tag: $tagName($t) = ".$value);
+				main::DEBUGLOG && $log->is_debug && $log->debug("Got raw tag: $tagName($t) = ".$value);
 				$tags->{$tagName} = $value;
 			} else {
-				$log->debug("Got normal tag: $tagName($t) = ".$tags->{$tagName});
+				main::DEBUGLOG && $log->is_debug && $log->debug("Got normal tag: $tagName($t) = ".$tags->{$tagName});
 			}
 		} else {
-			$log->debug("Ignoring tag: $t");
+			main::DEBUGLOG && $log->is_debug && $log->debug("Ignoring tag: $t");
 		}
 	}
 }

@@ -35,11 +35,8 @@ use Slim::Utils::Strings qw(string);
 use Slim::Utils::Log;
 use File::Spec::Functions qw(:ALL);
 use Scalar::Util qw(blessed);
-use Data::Dumper;
 
 use Plugins::CustomTagImporter::Common ':all';
-use Plugins::CustomTagImporter::Settings::Basic;
-use Plugins::CustomTagImporter::Settings::TagList;
 use Plugins::CustomTagImporter::Importer;
 use Plugins::CustomTagImporter::CBTemplateReader;
 
@@ -60,7 +57,7 @@ sub initPlugin {
 	refreshTitleFormats();
 	Slim::Control::Request::subscribe(\&_setRefreshCBTimer, [['rescan'], ['done']]);
 
-	if (!$::noweb) {
+	if (main::WEBUI) {
 		require Plugins::CustomTagImporter::Settings::Basic;
 		require Plugins::CustomTagImporter::Settings::TagList;
 		Plugins::CustomTagImporter::Settings::Basic->new($class);
@@ -79,7 +76,7 @@ sub initPrefs {
 
 	$prefs->setChange(\&Plugins::CustomTagImporter::Importer::toggleUseImporter, 'autorescan');
 	$prefs->setChange(sub {
-			$log->debug('Change in selected title formats detected. Refreshing titleformats.');
+			main::DEBUGLOG && $log->is_debug && $log->debug('Change in selected title formats detected. Refreshing titleformats.');
 			refreshTitleFormats();
 			Slim::Music::Info::clearFormatDisplayCache();
 		}, 'selectedtitleformats');
@@ -223,7 +220,7 @@ sub addTitleFormat {
 			return;
 		}
 	}
-	$log->debug("Adding: $titleformat");
+	main::DEBUGLOG && $log->is_debug && $log->debug("Adding: $titleformat");
 	push @{$titleFormats}, $titleformat;
 	$serverPrefs->set('titleFormat', $titleFormats);
 }
@@ -237,26 +234,26 @@ sub refreshTitleFormats {
 		if ($format && $availableTitleFormatOptions->{$format}) {
 			Slim::Music::TitleFormatter::addFormat("CTI_$format",
 				sub {
-					$log->debug("Retreiving title format: $format");
+					main::DEBUGLOG && $log->is_debug && $log->debug("Retreiving title format: $format");
 
 					my $track = shift;
 
 					# get local track if unblessed
 					if ($track && !blessed($track)) {
-						$log->debug('Track is not blessed');
+						main::DEBUGLOG && $log->is_debug && $log->debug('Track is not blessed');
 						my $trackObj = Slim::Schema->find('Track', $track->{id});
 						if (blessed($trackObj)) {
 							$track = $trackObj;
 						} else {
 							my $trackURL = $track->{'url'};
-							$log->debug('Slim::Schema->find found no blessed track object for id. Trying to retrieve track object with url: '.Dumper($trackURL));
+							main::DEBUGLOG && $log->is_debug && $log->debug('Slim::Schema->find found no blessed track object for id. Trying to retrieve track object with url: '.Data::Dump::dump($trackURL));
 							if (defined ($trackURL)) {
 								if (Slim::Music::Info::isRemoteURL($trackURL) == 1) {
 									$track = Slim::Schema->_retrieveTrack($trackURL);
-									$log->debug('Track is remote. Retrieved trackObj = '.Dumper($track));
+									main::DEBUGLOG && $log->is_debug && $log->debug('Track is remote. Retrieved trackObj = '.Data::Dump::dump($track));
 								} else {
 									$track = Slim::Schema->rs('Track')->single({'url' => $trackURL});
-									$log->debug('Track is not remote. TrackObj for url = '.Dumper($track));
+									main::DEBUGLOG && $log->is_debug && $log->debug('Track is not remote. TrackObj for url = '.Data::Dump::dump($track));
 								}
 							} else {
 								return '';
@@ -284,7 +281,7 @@ sub refreshTitleFormats {
 						if ($@) {
 							$log->error("Database error: $DBI::errstr\n$@");
 						}
-						$log->debug("Finished retrieving title format: $format = $result");
+						main::DEBUGLOG && $log->is_debug && $log->debug("Finished retrieving title format: $format = $result");
 					}
 					return $result;
 				});
@@ -300,7 +297,7 @@ sub getAvailableTitleFormats {
 	my %result = ();
 	my %selectedTitleFormats = ();
 	my $titleformats = $prefs->get('selectedtitleformats');
-	$log->debug('selected title formats = '.Dumper($titleformats));
+	main::DEBUGLOG && $log->is_debug && $log->debug('selected title formats = '.Data::Dump::dump($titleformats));
 	for my $format (@{$titleformats}) {
 		$selectedTitleFormats{uc($format)} = 1 if $format;
 	}
@@ -317,18 +314,18 @@ sub getAvailableTitleFormats {
 }
 
 sub _setRefreshCBTimer {
-	$log->debug('Killing existing timers for post-scan refresh to prevent multiple calls');
+	main::DEBUGLOG && $log->is_debug && $log->debug('Killing existing timers for post-scan refresh to prevent multiple calls');
 	Slim::Utils::Timers::killOneTimer(undef, \&delayedPostScanRefresh);
-	$log->debug('Scheduling a delayed post-scan refresh');
+	main::DEBUGLOG && $log->is_debug && $log->debug('Scheduling a delayed post-scan refresh');
 	Slim::Utils::Timers::setTimer(undef, time() + 2, \&delayedPostScanRefresh);
 }
 
 sub delayedPostScanRefresh {
 	if (Slim::Music::Import->stillScanning) {
-		$log->debug('Scan in progress. Waiting for current scan to finish.');
+		main::DEBUGLOG && $log->is_debug && $log->debug('Scan in progress. Waiting for current scan to finish.');
 		_setRefreshCBTimer();
 	} else {
-		$log->debug('Starting post-scan database table refresh.');
+		main::DEBUGLOG && $log->is_debug && $log->debug('Starting post-scan database table refresh.');
 		refreshTitleFormats();
 		Slim::Music::Info::clearFormatDisplayCache();
 	}

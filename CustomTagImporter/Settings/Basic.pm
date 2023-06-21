@@ -33,7 +33,6 @@ use File::Next;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Misc;
-use Data::Dumper;
 
 my $prefs = preferences('plugin.customtagimporter');
 my $log = logger('plugin.customtagimporter');
@@ -129,7 +128,7 @@ sub beforeRender {
 	$paramRef->{'activectiscan'} = 1 if $prefs->get('scanningInProgress');
 
 	$paramRef->{'titleformatOptions'} = Plugins::CustomTagImporter::Plugin::getAvailableTitleFormats();
-	$log->debug('titleformatOptions = '.Dumper($paramRef->{'titleformatOptions'}));
+	main::DEBUGLOG && $log->is_debug && $log->debug('titleformatOptions = '.Data::Dump::dump($paramRef->{'titleformatOptions'}));
 }
 
 sub trim_leadtail {

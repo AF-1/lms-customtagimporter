@@ -36,28 +36,28 @@ my $serverPrefs = preferences('server');
 my $log = Slim::Utils::Log::logger('plugin.customtagimporter');
 
 sub initPlugin {
-	$log->debug('Importer module init');
+	main::DEBUGLOG && $log->is_debug && $log->debug('Importer module init');
 	toggleUseImporter();
 }
 
 sub toggleUseImporter {
 	if ($prefs->get('autorescan')) {
-		$log->debug('Enabling importer');
+		main::DEBUGLOG && $log->is_debug && $log->debug('Enabling importer');
 		Slim::Music::Import->addImporter('Plugins::CustomTagImporter::Importer', {
 			'type' => 'post',
 			'weight' => 999,
 			'use' => 1,
 		});
 	} else {
-		$log->debug('Disabling importer');
+		main::DEBUGLOG && $log->is_debug && $log->debug('Disabling importer');
 		Slim::Music::Import->useImporter('Plugins::CustomTagImporter::Importer', 0);
 	}
 }
 
 sub startScan {
-	$log->debug('Starting importer');
+	main::DEBUGLOG && $log->is_debug && $log->debug('Starting importer');
 	if ($prefs->get('autorescan')) {
-		$log->debug('Starting CTI auto rescan');
+		main::DEBUGLOG && $log->is_debug && $log->debug('Starting CTI auto rescan');
 		rescan(1);
 	}
 	Slim::Music::Import->endImporter(__PACKAGE__);

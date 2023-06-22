@@ -62,7 +62,7 @@ PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_DUMPTAGNAMES
 	EN	Dump found tag names to file
 
 PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_DUMPTAGNAMES_DESC
-	EN	This writes the <b>names</b> of the tags found during the scan to a file in the LMS playlist folder.<br>A simple way to get an overview of which tags are included in the scanned files. Nevertheless, I cannot guarantee completeness.<br><br>If the <b>debug level</b> of this plugin in the LMS <i>Logging</i> settings is set to <b>debug</b>, this will write <b>all</b> tag <i>names</i> <b>and</b> <i>values</i> to the <b>server log</b>, not to a file. Depending on the size of your library, the server log file could grow to several MB in size.<br><br><b>These options are <b>only available for <i>manually</i> initiated</b> scans, <b>not for automatic scans</b> after an LMS rescan.
+	EN	This writes the <b>names</b> of the tags found during the scan to a file in the LMS preferences folder.<br>A simple way to get an overview of which tags are included in the scanned files. Nevertheless, I cannot guarantee completeness.<br><br>If the <b>debug level</b> of this plugin in the LMS <i>Logging</i> settings is set to <b>debug</b>, this will write <b>all</b> tag <i>names</i> <b>and</b> <i>values</i> to the <b>server log</b>, not to a file. Depending on the size of your library, the server log file could grow to several MB in size.<br><br><b>These options are <b>only available for <i>manually</i> initiated</b> scans, <b>not for automatic scans</b> after an LMS rescan.
 
 PLUGIN_CUSTOMTAGIMPORTER_AUTO_RESCAN
 	EN	Automatic rescan

@@ -426,7 +426,7 @@ sub exitScan {
 
 	# optional: dump tag names to file
 	if (!$scanningContext->{'importerCall'} && $prefs->get('dumptagnames')) {
-		my $saveDir = $serverPrefs->get('playlistdir');
+		my $saveDir = $serverPrefs->get('playlistdir') || Slim::Utils::OSDetect::dirsFor('prefs');
 		my $filename = catfile($saveDir, 'CTI_TagNameDump.txt');
 		my $output = FileHandle->new($filename, '>:utf8') or do {
 				$log->error('could not open '.$filename.' for writing.');

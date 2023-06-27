@@ -3,7 +3,7 @@
 	<id>afac7b8e-07fd-7c77-b8af-e6e996e8c140</id>
 	<name>PLUGIN_CUSTOMTAGIMPORTER</name>
 	<module>Plugins::CustomTagImporter::Plugin</module>
-	<version>1.0.4</version>
+	<version>1.0.5</version>
 	<description>PLUGIN_CUSTOMTAGIMPORTER_DESC</description>
 	<creator>AF</creator>
 	<importmodule>Plugins::CustomTagImporter::Importer</importmodule>

@@ -121,6 +121,7 @@ sub getCustomSkipFilterTypes {
 	my %customtag = (
 		'id' => 'customtagimporter_customtag_customtag',
 		'name' => 'Custom tag',
+		'filtercategory' => 'songs',
 		'description' => 'Skip songs with a specific custom tag',
 		'parameters' => [
 			{
@@ -135,6 +136,7 @@ sub getCustomSkipFilterTypes {
 	my %notcustomtag = (
 		'id' => 'customtagimporter_customtag_notcustomtag',
 		'name' => 'Not Custom tag',
+		'filtercategory' => 'songs',
 		'description' => 'Skip songs which do not have a specific custom tag',
 		'parameters' => [
 			{

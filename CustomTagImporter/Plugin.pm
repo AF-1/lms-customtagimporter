@@ -266,7 +266,7 @@ sub refreshTitleFormats {
 					my $result = '';
 					if ($track) {
 						eval {
-							my $dbh = getCurrentDBH();
+							my $dbh = Slim::Schema->dbh;
 							my $sth = $dbh->prepare("SELECT value from customtagimporter_track_attributes where type = 'customtag' and attr = ? and track = ? group by value");
 							$sth->bind_param(1, $format);
 							$sth->bind_param(2, $track->id);
@@ -295,7 +295,7 @@ sub refreshTitleFormats {
 }
 
 sub getAvailableTitleFormats {
-	my $dbh = getCurrentDBH();
+	my $dbh = Slim::Schema->dbh;
 	my %result = ();
 	my %selectedTitleFormats = ();
 	my $titleformats = $prefs->get('selectedtitleformats');

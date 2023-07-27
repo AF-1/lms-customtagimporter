@@ -46,7 +46,7 @@ my %dumpedTagNames;
 
 use base 'Exporter';
 our %EXPORT_TAGS = (
-	all => [qw( getCurrentDBH commit rollback initDatabase rescan abortScan isScanning countAvailableCustomTags)],
+	all => [qw(commit rollback initDatabase rescan abortScan isScanning countAvailableCustomTags)],
 );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{all} } );
 
@@ -175,7 +175,7 @@ my %rawTagNames = (
 sub initDatabase {
 	my $class = shift;
 
-	my $dbh = getCurrentDBH();
+	my $dbh = Slim::Schema->dbh;
 	my $sth = $dbh->table_info();
 	my $tableExists;
 	eval {
@@ -218,7 +218,7 @@ create index if not exists track_attr_value_cstrackidx on customtagimporter_trac
 
 sub executeSQLstat {
 	my $statement = shift;
-	my $dbh = getCurrentDBH();
+	my $dbh = Slim::Schema->dbh;
 	my $inStatement = 0;
 
 	for my $line (split(/[\n\r]/, $statement)) {
@@ -280,42 +280,66 @@ sub initTrackScan {
 
 	clearDBtable();
 
-	my $dbh = getCurrentDBH();
+	my $dbh = Slim::Schema->dbh;
 
 	# get track ids
 	@libraryTrackIDs = ();
 	my $sth = $dbh->prepare("SELECT tracks.id from tracks where tracks.audio = 1 and tracks.remote = 0 and tracks.content_type != 'cpl' and tracks.content_type != 'src' and tracks.content_type != 'ssp' and tracks.content_type != 'dir' and tracks.content_type is not null group by tracks.id order by tracks.id asc");
 	$sth->execute();
-	my $id;
+	my ($id, $url);
 	$sth->bind_col(1, \$id);
 	while ($sth->fetch()) {
 		push @libraryTrackIDs, $id;
 	}
 	$sth->finish();
 
-	$scanningContext->{'noOfTracks'} = scalar (@libraryTrackIDs);
+	my $count = scalar @libraryTrackIDs;
+	$scanningContext->{'noOfTracks'} = $count;
 	$scanningContext->{'currentTrackNo'} = 0;
 	main::DEBUGLOG && $log->is_debug && $log->debug('Number of tracks to scan: '.$scanningContext->{'noOfTracks'});
 	$scanningContext->{'importerCall'} = $importerCall;
 
 	if ($importerCall) {
-		scanTracksForImporter($scanningContext);
+		my $progress;
+
+		if ($count) {
+			$progress = Slim::Utils::Progress->new({
+				'type'  => 'importer',
+				'name'  => 'plugin_customtagimporter_scan',
+				'total' => $count,
+				'bar'   => 1
+			});
+		}
+
+		while ( scanTracksForImporter({
+			scanningContext => $scanningContext,
+			count => $count,
+			progress => $progress,
+		}) ) {}
 	} else {
 		Slim::Utils::Scheduler::add_task(\&scanTrack, $scanningContext);
 	}
 }
 
 sub scanTracksForImporter {
-	my $scanningContext = shift;
+	my $params = shift;
+	my $progress = $params->{progress};
+	my $scanningContext = $params->{scanningContext};
 
-	foreach (@libraryTrackIDs) {
-		getScanTrackAttributes($_, $scanningContext);
+	if (my $trackID = shift(@libraryTrackIDs)) {
+		getScanTrackAttributes($trackID, $scanningContext);
 
 		if ($scanningContext->{'currentTrackNo'} > 0 && $scanningContext->{'currentTrackNo'} % 1000 == 0) {
 			main::INFOLOG && $log->is_info && $log->info('Scanned '.$scanningContext->{'currentTrackNo'}.' out of '.$scanningContext->{'noOfTracks'}.' tracks so far');
 		}
+		return 1;
 	}
+
 	exitScan($scanningContext);
+	if ($progress) {
+		$progress->final($params->{count}) ;
+		$log->error(sprintf('  finished in %.3f seconds', $progress->duration));
+	}
 	return 0;
 }
 
@@ -340,7 +364,7 @@ sub getScanTrackAttributes {
 
 	if (defined($trackID)) {
 		my $track = Slim::Schema->rs('Track')->find($trackID);
-		my $dbh = getCurrentDBH();
+		my $dbh = Slim::Schema->dbh;
 		main::DEBUGLOG && $log->is_debug && $log->debug('Scanning track '.$scanningContext->{'currentTrackNo'}.' of '.$scanningContext->{'noOfTracks'});
 		main::DEBUGLOG && $log->is_debug && $log->debug('Scanning track: '.$track->title);
 
@@ -402,7 +426,7 @@ sub getScanTrackAttributes {
 sub exitScan {
 	my $scanningContext = shift;
 	main::DEBUGLOG && $log->is_debug && $log->debug('Optimizing SQLite database');
-	my $dbh = getCurrentDBH();
+	my $dbh = Slim::Schema->dbh;
 	$dbh->do("ANALYZE customtagimporter_track_attributes");
 	commit($dbh);
 	if (!isScanning(undef)) {
@@ -460,7 +484,7 @@ sub isScanning {
 }
 
 sub clearDBtable {
-	my $dbh = getCurrentDBH();
+	my $dbh = Slim::Schema->dbh;
 	my $startTime = time();
 
 	my $clearDBsql = "DROP TABLE customtagimporter_track_attributes";
@@ -985,7 +1009,7 @@ sub rateScannedTracks {
 
 	my $started = my $totalTimeStarted = time();
 	my $RLenabled = Slim::Utils::PluginManager->isEnabled('Plugins::RatingsLight::Plugin');
-	my $dbh = getCurrentDBH();
+	my $dbh = Slim::Schema->dbh;
 
 	### get rated CTI tracks (and their rating values)
 	my $sqlGetRatedCTItracks = "select customtagimporter_track_attributes.urlmd5, customtagimporter_track_attributes.value from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0";
@@ -1152,7 +1176,7 @@ sub getRawMP3Tags {
 }
 
 sub countAvailableCustomTags {
-	my $dbh = getCurrentDBH();
+	my $dbh = Slim::Schema->dbh;
 	my $customTagSql = "select count(distinct attr) from customtagimporter_track_attributes where type='customtag' group by attr";
 	my $thisCount;
 	my $sth = $dbh->prepare($customTagSql);
@@ -1161,10 +1185,6 @@ sub countAvailableCustomTags {
 	$sth->fetch();
 	$sth->finish;
 	return $thisCount;
-}
-
-sub getCurrentDBH {
-	return Slim::Schema->storage->dbh();
 }
 
 sub commit {

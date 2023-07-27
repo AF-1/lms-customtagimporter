@@ -55,12 +55,13 @@ sub toggleUseImporter {
 }
 
 sub startScan {
+	my $class = shift;
 	main::DEBUGLOG && $log->is_debug && $log->debug('Starting importer');
 	if ($prefs->get('autorescan')) {
 		main::DEBUGLOG && $log->is_debug && $log->debug('Starting CTI auto rescan');
-		rescan(1);
+		$class->rescan(1);
 	}
-	Slim::Music::Import->endImporter(__PACKAGE__);
+	Slim::Music::Import->endImporter($class);
 }
 
 1;

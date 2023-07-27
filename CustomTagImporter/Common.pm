@@ -304,10 +304,10 @@ sub initTrackScan {
 
 		if ($count) {
 			$progress = Slim::Utils::Progress->new({
-				'type'  => 'importer',
-				'name'  => 'plugin_customtagimporter_scan',
+				'type' => 'importer',
+				'name' => 'plugin_customtagimporter_scan',
 				'total' => $count,
-				'bar'   => 1
+				'bar' => 1
 			});
 		}
 
@@ -337,8 +337,8 @@ sub scanTracksForImporter {
 
 	exitScan($scanningContext);
 	if ($progress) {
-		$progress->final($params->{count}) ;
-		$log->error(sprintf('  finished in %.3f seconds', $progress->duration));
+		$progress->final($params->{count});
+		$log->error(sprintf('Finished in %.3f seconds', $progress->duration));
 	}
 	return 0;
 }

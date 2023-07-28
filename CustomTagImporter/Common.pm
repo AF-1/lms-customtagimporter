@@ -329,6 +329,7 @@ sub scanTracksForImporter {
 	if (my $trackID = shift(@libraryTrackIDs)) {
 		getScanTrackAttributes($trackID, $scanningContext);
 
+		$progress->update() if $progress;
 		if ($scanningContext->{'currentTrackNo'} > 0 && $scanningContext->{'currentTrackNo'} % 1000 == 0) {
 			main::INFOLOG && $log->is_info && $log->info('Scanned '.$scanningContext->{'currentTrackNo'}.' out of '.$scanningContext->{'noOfTracks'}.' tracks so far');
 		}

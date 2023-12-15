@@ -50,12 +50,18 @@
 	<br>
 
 	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_RAWMP3TAGS" desc="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_RAWMP3TAGS_DESC" %]
-		<input class="inputfield" type="checkbox" name="pref_customtagrawmp3tags" id="customtagrawmp3tags" [% IF prefs.customtagrawmp3tags %] checked [% END %]>
+	<select class="stdedit" name="pref_customtagrawmp3tags" id="customtagrawmp3tags">
+		<option [% IF NOT prefs.customtagrawmp3tags %]selected [% END %]value="0">[% 'NO' | getstring %]</option>
+		<option [% IF prefs.customtagrawmp3tags %]selected [% END %]value="1">[% 'YES' | getstring %]</option>
+	</select>
 	[% END %]
 	<br>
 
 	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_DUMPTAGNAMES" desc="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_DUMPTAGNAMES_DESC" %]
-		<input class="inputfield" type="checkbox" name="pref_dumptagnames" id="dumptagnames" [% IF prefs.dumptagnames %] checked [% END %]>
+	<select class="stdedit" name="pref_dumptagnames" id="dumptagnames">
+		<option [% IF NOT prefs.dumptagnames %]selected [% END %]value="0">[% 'NO' | getstring %]</option>
+		<option [% IF prefs.dumptagnames %]selected [% END %]value="1">[% 'YES' | getstring %]</option>
+	</select>
 	[% END %]
 	<br>
 
@@ -75,7 +81,10 @@
 	<br>
 
 	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_WRITETOLMSDB" desc="PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_WRITETOLMSDB_DESC" %]
-		<input class="inputfield" name="pref_writeratingstodb" id="writeratingstodb" type="checkbox" [% IF prefs.writeratingstodb %] checked [% END %]>
+	<select class="stdedit" name="pref_writeratingstodb" id="writeratingstodb">
+		<option [% IF NOT prefs.writeratingstodb %]selected [% END %]value="0">[% 'NO' | getstring %]</option>
+		<option [% IF prefs.writeratingstodb %]selected [% END %]value="1">[% 'YES' | getstring %]</option>
+	</select>
 	[% END %]
 	<br>
 
@@ -84,7 +93,10 @@
 <br>
 
 	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_AUTO_RESCAN" desc="PLUGIN_CUSTOMTAGIMPORTER_AUTO_RESCAN_DESC" %]
-		<input class="inputfield" name="pref_autorescan" id="autorescan" type="checkbox" [% IF prefs.autorescan %] checked [% END %]>
+		<select class="stdedit" name="pref_autorescan" id="autorescan">
+			<option [% IF NOT prefs.autorescan %]selected [% END %]value="0">[% 'NO' | getstring %]</option>
+			<option [% IF prefs.autorescan %]selected [% END %]value="1">[% 'YES' | getstring %]</option>
+		</select>
 	[% END %]
 	<br>
 

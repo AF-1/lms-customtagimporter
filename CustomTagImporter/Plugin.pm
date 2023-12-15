@@ -243,7 +243,7 @@ sub refreshTitleFormats {
 					# get local track if unblessed
 					if ($track && !blessed($track)) {
 						main::DEBUGLOG && $log->is_debug && $log->debug('Track is not blessed');
-						my $trackObj = Slim::Schema->find('Track', $track->{id});
+						my $trackObj = Slim::Schema->find('Track', $track->id);
 						if (blessed($trackObj)) {
 							$track = $trackObj;
 						} else {
@@ -254,7 +254,7 @@ sub refreshTitleFormats {
 									$track = Slim::Schema->_retrieveTrack($trackURL);
 									main::DEBUGLOG && $log->is_debug && $log->debug('Track is remote. Retrieved trackObj = '.Data::Dump::dump($track));
 								} else {
-									$track = Slim::Schema->rs('Track')->single({'url' => $trackURL});
+									$track = Slim::Schema->search('Track', {'url' => $trackURL })->first();
 									main::DEBUGLOG && $log->is_debug && $log->debug('Track is not remote. TrackObj for url = '.Data::Dump::dump($track));
 								}
 							} else {

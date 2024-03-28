@@ -1,7 +1,7 @@
 Custom Tag Importer
 ====
 
-Custom Tag Importer[^1] scans track information from custom tags in your music files. That includes rating tags because a rating tag is basically just a custom tag for ratings.
+**Custom Tag Importer**[^1] scans track information from custom tags in your music files. That includes rating tags because a rating tag is basically just a custom tag for ratings.
 <br><br>
 
 [⬅️ **Back to the list of all plugins**](https://github.com/AF-1/)

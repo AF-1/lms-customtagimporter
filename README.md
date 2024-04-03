@@ -39,6 +39,14 @@ It usually takes a few hours for a *new* release to be listed on the LMS plugin 
 <br><br><br>
 
 
+## FAQ
+
+<details><summary>»<b>I have (de)selected a custom tag as a title format on the CTI settings page but it still only shows the name of the title format not the value.</b>«</summary><br><p>
+I think title formats were not meant to be added and removed while the server is running. Restarting the server will load your new selection of custom tags as title formats.
+</p></details>
+<br><br><br>
+
+
 ## Reporting a new issue
 
 If you want to report a new issue, please fill out this [**issue report template**](https://github.com/AF-1/lms-customtagimporter/issues/new?template=bug_report.md&title=%5BISSUE%5D+).

@@ -47,6 +47,7 @@ my $log = Slim::Utils::Log->addLogCategory({
 	'defaultLevel' => 'ERROR',
 	'description' => 'PLUGIN_CUSTOMTAGIMPORTER',
 });
+my $availableCTItitleFormats = ();
 
 sub initPlugin {
 	my $class = shift;
@@ -54,7 +55,6 @@ sub initPlugin {
 	initDatabase();
 
 	initPrefs();
-	refreshTitleFormats();
 	Slim::Control::Request::subscribe(\&_setRefreshCBTimer, [['rescan'], ['done']]);
 
 	if (main::WEBUI) {
@@ -63,6 +63,10 @@ sub initPlugin {
 		Plugins::CustomTagImporter::Settings::Basic->new($class);
 		Plugins::CustomTagImporter::Settings::TagList->new($class);
 	}
+}
+
+sub postinitPlugin {
+	refreshTitleFormats();
 }
 
 sub initPrefs {
@@ -76,9 +80,8 @@ sub initPrefs {
 
 	$prefs->setChange(\&Plugins::CustomTagImporter::Importer::toggleUseImporter, 'autorescan');
 	$prefs->setChange(sub {
-			main::DEBUGLOG && $log->is_debug && $log->debug('Change in selected title formats detected. Refreshing titleformats.');
-			refreshTitleFormats();
-			Slim::Music::Info::clearFormatDisplayCache();
+			main::DEBUGLOG && $log->is_debug && $log->debug('Change in selected title formats detected. Refreshing titleformats. Changes to your selection might require a server restart to take effect.');
+			_setRefreshCBTimer();
 		}, 'selectedtitleformats');
 }
 
@@ -222,114 +225,122 @@ sub addTitleFormat {
 			return;
 		}
 	}
-	main::DEBUGLOG && $log->is_debug && $log->debug("Adding: $titleformat");
+	main::DEBUGLOG && $log->is_debug && $log->debug("Adding to server title format list: $titleformat");
 	push @{$titleFormats}, $titleformat;
 	$serverPrefs->set('titleFormat', $titleFormats);
 }
 
 sub refreshTitleFormats {
-	my $titleformats = $prefs->get('selectedtitleformats');
-	my $availableTitleFormatOptions = getAvailableTitleFormats();
-	my $newUnicodeHandling = UNIVERSAL::can("Slim::Utils::Unicode", "hasEDD") ? 1 : 0;
+	$availableCTItitleFormats = getAvailableCTItitleFormats();
+	main::DEBUGLOG && $log->is_debug && $log->debug('available CTI title formats = '.Data::Dump::dump($availableCTItitleFormats));
 
-	for my $format (@{$titleformats}) {
-		if ($format && $availableTitleFormatOptions->{$format}) {
-			Slim::Music::TitleFormatter::addFormat("CTI_$format",
-				sub {
-					main::DEBUGLOG && $log->is_debug && $log->debug("Retreiving title format: $format");
+	my $selTFs = $prefs->get('selectedtitleformats');
+	if ($selTFs) {
+		my %selTFhash = scalar @{$selTFs} > 0 ? map {$_ => 1} @{$selTFs} : ();
+		main::DEBUGLOG && $log->is_debug && $log->debug('selected CTI title formats = '.Data::Dump::dump(\%selTFhash));
 
-					my $track = shift;
+		# register title formats for selected CTI custom tag attributes
+		if (scalar keys %{$availableCTItitleFormats} > 0) {
+			foreach my $key (sort { $a <=> $b } keys %{$availableCTItitleFormats}) {
+				my $format = $availableCTItitleFormats->{$key};
+				main::DEBUGLOG && $log->is_debug && $log->debug('format = '.Data::Dump::dump($format).' -- key = '.$key);
+				main::INFOLOG && $log->is_info && $log->info("Title format '$format': ".($selTFhash{$format} ? '' : 'NOT ').'selected in CTI settings.');
+				next unless $selTFhash{$format};
 
-					# get local track if unblessed
-					if ($track && !blessed($track)) {
-						main::DEBUGLOG && $log->is_debug && $log->debug('Track is not blessed');
-						my $trackObj = Slim::Schema->find('Track', $track->id);
-						if (blessed($trackObj)) {
-							$track = $trackObj;
-						} else {
-							my $trackURL = $track->{'url'};
-							main::DEBUGLOG && $log->is_debug && $log->debug('Slim::Schema->find found no blessed track object for id. Trying to retrieve track object with url: '.Data::Dump::dump($trackURL));
-							if (defined ($trackURL)) {
-								if (Slim::Music::Info::isRemoteURL($trackURL) == 1) {
-									$track = Slim::Schema->_retrieveTrack($trackURL);
-									main::DEBUGLOG && $log->is_debug && $log->debug('Track is remote. Retrieved trackObj = '.Data::Dump::dump($track));
-								} else {
-									$track = Slim::Schema->search('Track', {'url' => $trackURL })->first();
-									main::DEBUGLOG && $log->is_debug && $log->debug('Track is not remote. TrackObj for url = '.Data::Dump::dump($track));
-								}
-							} else {
-								return '';
-							}
-						}
-					}
-
-					my $result = '';
-					if ($track) {
-						eval {
-							my $dbh = Slim::Schema->dbh;
-							my $sth = $dbh->prepare("SELECT value from customtagimporter_track_attributes where type = 'customtag' and attr = ? and track = ? group by value");
-							$sth->bind_param(1, $format);
-							$sth->bind_param(2, $track->id);
-							$sth->execute();
-							my $value;
-							$sth->bind_col(1, \$value);
-							while ($sth->fetch()) {
-								$result .= ', ' if $result;
-								$value = $newUnicodeHandling ? Slim::Utils::Unicode::utf8decode($value, 'utf8') : Slim::Utils::Unicode::utf8on(Slim::Utils::Unicode::utf8decode($value, 'utf8'));
-								$result .= $value;
-							}
-							$sth->finish();
-						};
-						if ($@) {
-							$log->error("Database error: $DBI::errstr\n$@");
-						}
-						main::DEBUGLOG && $log->is_debug && $log->debug("Finished retrieving title format: $format = $result");
-					}
-					return $result;
-				});
-			addTitleFormat("TRACKNUM. TITLE - CTI_$format");
-		} elsif ($format) {
-			Slim::Menu::TrackInfo->deregisterInfoProvider("CTI_$format");
+				addTitleFormat("CTI_$format");
+				Slim::Music::TitleFormatter::addFormat("CTI_$format", sub {
+					my $track = shift; getTitleFormat($track, $availableCTItitleFormats->{$key});
+				 }, 1);
+				main::INFOLOG && $log->is_info && $log->info("Registered title format: CTI_$format");
+			}
 		}
 	}
+
+	Slim::Music::Info::clearFormatDisplayCache();
 }
 
-sub getAvailableTitleFormats {
+sub getAvailableCTItitleFormats {
 	my $dbh = Slim::Schema->dbh;
 	my %result = ();
-	my %selectedTitleFormats = ();
-	my $titleformats = $prefs->get('selectedtitleformats');
-	main::DEBUGLOG && $log->is_debug && $log->debug('selected title formats = '.Data::Dump::dump($titleformats));
-	for my $format (@{$titleformats}) {
-		$selectedTitleFormats{uc($format)} = 1 if $format;
-	}
-
-	my $sth = $dbh->prepare("SELECT attr from customtagimporter_track_attributes where type = 'customtag' group by attr");
+	my $sth = $dbh->prepare("SELECT attr from customtagimporter_track_attributes where type = 'customtag' group by attr order by attr");
 	my $attr;
 	$sth->execute();
 	$sth->bind_col(1,\$attr);
+	my $i = 1;
 	while ($sth->fetch()) {
-		$result{uc($attr)} = $selectedTitleFormats{uc($attr)} ? 1 : 0;
+		$result{$i} = uc($attr);
+		$i++;
 	}
 	$sth->finish();
 	return \%result;
 }
 
-sub _setRefreshCBTimer {
-	main::DEBUGLOG && $log->is_debug && $log->debug('Killing existing timers for post-scan refresh to prevent multiple calls');
-	Slim::Utils::Timers::killOneTimer(undef, \&delayedPostScanRefresh);
-	main::DEBUGLOG && $log->is_debug && $log->debug('Scheduling a delayed post-scan refresh');
-	Slim::Utils::Timers::setTimer(undef, time() + 2, \&delayedPostScanRefresh);
+sub getTitleFormat {
+	my ($track, $CTIattribute) = @_;
+	my $result = '';
+
+	# get local track if unblessed
+	if ($track && !blessed($track)) {
+		main::DEBUGLOG && $log->is_debug && $log->debug('Track is not blessed');
+		my $trackObj = Slim::Schema->find('Track', $track->{id});
+		if (blessed($trackObj)) {
+			$track = $trackObj;
+		} else {
+			my $trackURL = $track->{'url'};
+			main::DEBUGLOG && $log->is_debug && $log->debug('Slim::Schema->find found no blessed track object for id. Trying to retrieve track object with url: '.Data::Dump::dump($trackURL));
+			if (defined ($trackURL)) {
+				if (Slim::Music::Info::isRemoteURL($trackURL) == 1) {
+					$track = Slim::Schema->_retrieveTrack($trackURL);
+					main::DEBUGLOG && $log->is_debug && $log->debug('Track is remote. Retrieved trackObj = '.Data::Dump::dump($track));
+				} else {
+					$track = Slim::Schema->rs('Track')->single({'url' => $trackURL});
+					main::DEBUGLOG && $log->is_debug && $log->debug('Track is not remote. TrackObj for url = '.Data::Dump::dump($track));
+				}
+			} else {
+				return '';
+			}
+		}
+	}
+
+	if ($track) {
+		my $dbh = Slim::Schema->dbh;
+		my $trackID = $track->id;
+		my $sql = "select value from customtagimporter_track_attributes where type = 'customtag' and attr = \"$CTIattribute\" and track = $trackID group by value";
+		my $sth = $dbh->prepare($sql);
+		my $value;
+		eval {
+			$sth->execute();
+			$sth->bind_col(1, \$value);
+			while ($sth->fetch()) {
+				$result .= ', ' if $result;
+				$value = Slim::Utils::Unicode::utf8decode($value, 'utf8');
+				$result .= $value;
+			}
+			$sth->finish();
+		};
+		if ($@) {
+			$log->error("Database error: $DBI::errstr");
+		}
+	}
+
+	main::INFOLOG && $log->is_info && $log->info("Finished retrieving title format: $CTIattribute = $result");
+	return $result;
 }
 
-sub delayedPostScanRefresh {
+sub _setRefreshCBTimer {
+	main::DEBUGLOG && $log->is_debug && $log->debug('Killing existing timers for refresh to prevent multiple calls');
+	Slim::Utils::Timers::killOneTimer(undef, \&delayedRefresh);
+	main::DEBUGLOG && $log->is_debug && $log->debug('Scheduling a delayed refresh');
+	Slim::Utils::Timers::setTimer(undef, time() + 2, \&delayedRefresh);
+}
+
+sub delayedRefresh {
 	if (Slim::Music::Import->stillScanning) {
 		main::DEBUGLOG && $log->is_debug && $log->debug('Scan in progress. Waiting for current scan to finish.');
 		_setRefreshCBTimer();
 	} else {
-		main::DEBUGLOG && $log->is_debug && $log->debug('Starting post-scan database table refresh.');
+		main::DEBUGLOG && $log->is_debug && $log->debug('Starting refresh.');
 		refreshTitleFormats();
-		Slim::Music::Info::clearFormatDisplayCache();
 	}
 }
 

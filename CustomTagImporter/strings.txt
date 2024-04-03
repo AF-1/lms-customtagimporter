@@ -17,7 +17,7 @@ PLUGIN_CUSTOMTAGIMPORTER_GITHUB_LINK_TEXT
 	EN	Click here for more information.
 
 PLUGIN_CUSTOMTAGIMPORTER_GITHUB_LINK
-	EN	https://github.com/AF-1/lms-customtagimporter#customtagimporter
+	EN	https://github.com/AF-1/#-custom-tag-importer
 
 PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS
 	EN	Custom Tags
@@ -38,12 +38,12 @@ PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TITLEFORMATS
 	EN	Title formats
 
 PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TITLEFORMATS_DESC
-	EN	Select the custom tags you want to make available as title formats
+	EN	Select the custom tags you want to make available as title formats.<br>⚠️ Changes to your selection require a server restart to take effect.
 
-PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGSMAPPING
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGMAPPING
 	EN	Tag mapping
 
-PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGSMAPPING_DESC
+PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGMAPPING_DESC
 	EN	<b>Comma</b> separated list of the tags that should be mapped to other tags.<br><br>For more information and examples see the <a href="https://github.com/AF-1/lms-customtagimporter/wiki">GitHub wiki pages</a>.
 
 PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_SORTTAGMAPPING
@@ -119,7 +119,7 @@ PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_HEADING
 	EN	Custom tags in the CTI database and their values
 
 PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_INFO
-	EN	Please note: This list is just FYI. You can't set or change anything here.
+	EN	💡️ Please note: This list is just FYI. You <i>cannot</i> set or change anything here.
 
 PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_NOCUSTOMTAGSFOUND
 	EN	Found no custom tags

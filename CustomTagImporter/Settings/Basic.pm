@@ -127,8 +127,13 @@ sub beforeRender {
 	$paramRef->{'activelmsscan'} = 1 if (!Slim::Schema::hasLibrary() || Slim::Music::Import->stillScanning);
 	$paramRef->{'activectiscan'} = 1 if $prefs->get('scanningInProgress');
 
-	$paramRef->{'titleformatOptions'} = Plugins::CustomTagImporter::Plugin::getAvailableTitleFormats();
+	$paramRef->{'titleformatOptions'} = Plugins::CustomTagImporter::Plugin::getAvailableCTItitleFormats();
 	main::DEBUGLOG && $log->is_debug && $log->debug('titleformatOptions = '.Data::Dump::dump($paramRef->{'titleformatOptions'}));
+
+	my $selTFs = $prefs->get('selectedtitleformats');
+	my %selTFsHash = map {$_ => 1} @{$selTFs};
+	$paramRef->{'selectedtitleformats'} = \%selTFsHash;
+	main::DEBUGLOG && $log->is_debug && $log->debug('selectedtitleformats = '.Data::Dump::dump($paramRef->{'selectedtitleformats'}));
 }
 
 sub trim_leadtail {

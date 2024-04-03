@@ -1,25 +1,25 @@
-<style>.padleft{padding-left:20px;}</style>
+<style>.padleft{padding-left:20px;}.header{font-size:120%;}</style>
 [% page = "PLUGIN_CUSTOMTAGIMPORTER" %]
 [% PROCESS settings/header.html %]
 
-[% PROCESS plugins/PotPourri/settings/subpage_chooser.html %]
+[% PROCESS plugins/CustomTagImporter/settings/subpage_chooser.html %]
 
-<span class="padleft">[% "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_HEADING" | string %]</span>
-<br>
+<span class="padleft header">[% "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_HEADING" | string %]</span><br><br>
+<span class="padleft">[% "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_INFO" | string %]</span>
+<br><br>
 [% IF customtagcount %]
 	[% FOREACH attr = attrvaluelist.keys.sort %]
-		[%- IF attrTotalCount.$attr == 1; settingstitle = attr _ " (" _ attrTotalCount.$attr _ " track)"; ELSE; settingstitle = attr _ " (" _ attrTotalCount.$attr _ " tracks)"; END; %]
+		[%- settingstitle = attr _ "<br>(" _ attrvaluelist.$attr.keys.size; IF attrvaluelist.$attr.keys.size == 1; settingstitle = settingstitle _ " value, "; ELSE; settingstitle = settingstitle _ " values, "; END; settingstitle = settingstitle _ attrTotalCount.$attr; IF attrvaluelist.$attr.keys.size == 1; settingstitle = settingstitle _ " track)"; ELSE; settingstitle = settingstitle _ " tracks)"; END; %]
 		[% WRAPPER setting title=settingstitle desc="" %]
 			<select name="" multiple size="10">
 			[%- valuelistforthisattr = attrvaluelist.$attr %]
 			[%- FOREACH attrvalue = attrvaluelist.$attr.keys.sort %]
-			<option value="">[% FILTER truncate(110, '&hellip;') %][% attrvalue %][% END %]&nbsp;&nbsp;&nbsp;([% valuelistforthisattr.$attrvalue %][% IF valuelistforthisattr.$attrvalue == 1 %] track[% ELSE %] tracks[% END %])&nbsp;</option>
+			<option value="" disabled>[% FILTER truncate(110, '&hellip;') %][% attrvalue %][% END %]&nbsp;&nbsp;&nbsp;([% valuelistforthisattr.$attrvalue %][% IF valuelistforthisattr.$attrvalue == 1 %] track[% ELSE %] tracks[% END %])&nbsp;</option>
 			[%- END %]
 			</select>
 			<br><br>
 		[% END %]
 	[% END %]
-	<span class="padleft">[% "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_INFO" | string %]</span>
 [% ELSE %]
 	<br>
 	<span class="padleft">[% "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_NOCUSTOMTAGSFOUND" | string %]</span>

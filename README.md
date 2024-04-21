@@ -41,6 +41,17 @@ It usually takes a few hours for a *new* release to be listed on the LMS plugin 
 
 ## FAQ
 
+<details><summary>»<b>What can I do with imported custom tags?</b>«<br>&nbsp;&nbsp;&nbsp;&nbsp;»<b>Which plugins does CTI work with?</b>«</summary><br><p>
+CTI stores custom tags and values in a separate LMS database table. Since this table is not part of the LMS default setup, LMS does <i>not</i> access or use keys or values from this table by default.<br><br>In other words, what you can do with them <b>depends on other plugins</b>. Here are some <i>examples</i>:<br><br>
+&nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/lms-dynamicplaylistcreator"><b>Dynamic Playlist Creator</b></a> / <a href="https://github.com/AF-1/lms-dynamicplaylists"><b>Dynamic Playlists</b></a>: create/play smart playlists based on custom tag values<br><br>
+&nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/lms-virtuallibrarycreator"><b>Virtual Library Creator</b></a>: create virtual libraries (with optional browse menus) using custom tags<br><br>
+&nbsp;&nbsp;&nbsp;- <b>CustomBrowse</b> (unsupported): create menus using custom tags<br><br>
+&nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/lms-customskip#custom-skip"><b>Custom Skip</b></a>: skip tracks with/without specific custom tags<br><br>
+&nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/lms-virtuallibrarycreator"><b>PotPourri</b></a>: add custom tag information to the song info page of your tracks<br>
+
+</p></details>
+<br>
+
 <details><summary>»<b>I have (de)selected a custom tag as a title format on the CTI settings page but it still only shows the name of the title format not the value.</b>«</summary><br><p>
 I think title formats were not meant to be added and removed while the server is running. Restarting the server will load your new selection of custom tags as title formats.
 </p></details>

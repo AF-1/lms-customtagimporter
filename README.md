@@ -47,7 +47,6 @@ CTI stores custom tags and values in a separate LMS database table. Since this t
 &nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/lms-virtuallibrarycreator"><b>Virtual Library Creator</b></a>: create virtual libraries (with optional browse menus) using custom tags<br><br>
 &nbsp;&nbsp;&nbsp;- <b>CustomBrowse</b> (unsupported): create menus using custom tags<br><br>
 &nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/lms-customskip"><b>Custom Skip</b></a>: skip tracks with/without specific custom tags<br><br>
-&nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/lms-potpourri"><b>PotPourri</b></a>: add custom tag information to the song info page of your tracks<br>
 
 </p></details>
 <br>

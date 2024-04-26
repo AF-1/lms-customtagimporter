@@ -34,7 +34,8 @@ use Slim::Utils::Misc;
 use Slim::Utils::Strings qw(string);
 use Slim::Utils::Log;
 use File::Spec::Functions qw(:ALL);
-use Scalar::Util qw(blessed);
+use Scalar::Util qw(blessed looks_like_number);
+use HTML::Entities;
 
 use Plugins::CustomTagImporter::Common ':all';
 use Plugins::CustomTagImporter::Importer;
@@ -60,13 +61,15 @@ sub initPlugin {
 	if (main::WEBUI) {
 		require Plugins::CustomTagImporter::Settings::Basic;
 		require Plugins::CustomTagImporter::Settings::TagList;
+		require Plugins::CustomTagImporter::Settings::DisplayedTagInfo;
 		Plugins::CustomTagImporter::Settings::Basic->new($class);
 		Plugins::CustomTagImporter::Settings::TagList->new($class);
+		Plugins::CustomTagImporter::Settings::DisplayedTagInfo->new($class);
 	}
 }
 
 sub postinitPlugin {
-	refreshTitleFormats();
+	initMatrix();
 }
 
 sub initPrefs {
@@ -83,7 +86,13 @@ sub initPrefs {
 			main::DEBUGLOG && $log->is_debug && $log->debug('Change in selected title formats detected. Refreshing titleformats. Changes to your selection might require a server restart to take effect.');
 			_setRefreshCBTimer();
 		}, 'selectedtitleformats');
+	$prefs->setChange(sub {
+			main::DEBUGLOG && $log->is_debug && $log->debug('Change in custom tag config matrix detected. Reinitializing trackinfohandler & titleformats.');
+			initMatrix();
+			Slim::Music::Info::clearFormatDisplayCache();
+		}, 'customtagconfigmatrix');
 }
+
 
 sub getCustomBrowseTemplates {
 	my $client = shift;
@@ -118,6 +127,7 @@ sub getCustomBrowseContextTemplateData {
 	return $data;
 }
 
+
 sub getCustomSkipFilterTypes {
 	my @result = ();
 
@@ -140,7 +150,7 @@ sub getCustomSkipFilterTypes {
 		'id' => 'customtagimporter_customtag_notcustomtag',
 		'name' => 'Not Custom tag',
 		'filtercategory' => 'songs',
-		'description' => 'Skip songs which do not have a specific custom tag',
+		'description' => 'Skip songs that do not have a specific custom tag',
 		'parameters' => [
 			{
 				'id' => 'customtag',
@@ -151,32 +161,86 @@ sub getCustomSkipFilterTypes {
 		]
 	);
 	push @result, \%notcustomtag;
+
+	my %customtagvalue = (
+		'id' => 'customtagimporter_customtag_customtagvalue',
+		'name' => 'Custom tag value',
+		'filtercategory' => 'songs',
+		'description' => 'Skip songs with specific custom tag value(s)',
+		'parameters' => [
+			{
+				'id' => 'customtag',
+				'type' => 'sqlsinglelist',
+				'name' => 'Custom tag',
+				'data' => 'select distinct attr, attr, attr from customtagimporter_track_attributes order by attr'
+			},
+			{
+				'id' => 'logop',
+				'type' => 'singlelist',
+				'name' => '',
+				'data' => 'lt=Less than,le=Less than or equal to,ge=Greater than or equal to,gt=Greater than,eq=Equal to (single value),contains=Contains (string),oneof=Equal to one of multiple values',
+				'value' => 'eq'
+			},
+			{
+				'id' => 'customtagvalue',
+				'type' => 'text',
+				'name' => 'Custom tag value<br>(case sensitive, use semicolon to separate multiple values)',
+			}
+		]
+	);
+	push @result, \%customtagvalue;
+
+	my %notcustomtagvalue = (
+		'id' => 'customtagimporter_customtag_notcustomtagvalue',
+		'name' => 'Not custom tag value',
+		'filtercategory' => 'songs',
+		'description' => 'Skip songs that do NOT have specific custom tag values',
+		'parameters' => [
+			{
+				'id' => 'customtag',
+				'type' => 'sqlsinglelist',
+				'name' => 'Custom tag',
+				'data' => 'select distinct attr, attr, attr from customtagimporter_track_attributes order by attr'
+			},
+			{
+				'id' => 'logop',
+				'type' => 'singlelist',
+				'name' => '',
+				'data' => 'lt=Less than,le=Less than or equal to,ge=Greater than or equal to,gt=Greater than,eq=Equal to (single value),contains=Contains (string),oneof=Equal to one of multiple values',
+				'value' => 'eq'
+			},
+			{
+				'id' => 'customtagvalue',
+				'type' => 'text',
+				'name' => 'Custom tag value<br>(case sensitive, use semicolon to separate multiple values)',
+			}
+		]
+	);
+	push @result, \%notcustomtagvalue;
+
 	return \@result;
 }
 
 sub checkCustomSkipFilterType {
-	my $client = shift;
-	my $filter = shift;
-	my $track = shift;
+	my ($client, $filter, $track) = @_;
+	my $trackID = $track->id;
 
 	my $currentTime = time();
 	my $parameters = $filter->{'parameter'};
 	my $result = 0;
 	my $dbh = Slim::Schema->storage->dbh();
-	if ($filter->{'id'} eq 'customtagimporter_customtag_customtag') {
-		my $matching = 0;
+	if (($filter->{'id'} eq 'customtagimporter_customtag_customtag') || ($filter->{'id'} eq 'customtagimporter_customtag_notcustomtag')) {
 		for my $parameter (@{$parameters}) {
 			if ($parameter->{'id'} eq 'customtag') {
 				my $values = $parameter->{'value'};
 				my $customtag = $values->[0] if (defined($values) && scalar(@{$values}) > 0);
 
-				my $sth = $dbh->prepare("select track from customtagimporter_track_attributes where track = ? and attr = ?");
+				my $sth = $dbh->prepare("select track from customtagimporter_track_attributes where track = $trackID and type='customtag' and attr = \"$customtag\"");
+				$result = 1 if $filter->{'id'} eq 'customtagimporter_customtag_notcustomtag';
 				eval {
-					$sth->bind_param(1, $track->id);
-					$sth->bind_param(2, $customtag);
 					$sth->execute();
 					if ($sth->fetch()) {
-						$result = 1;
+						$result = ($filter->{'id'} eq 'customtagimporter_customtag_notcustomtag') ? 0 : 1;
 					}
 				};
 				if ($@) {
@@ -186,34 +250,253 @@ sub checkCustomSkipFilterType {
 				last;
 			}
 		}
-	} elsif ($filter->{'id'} eq 'customtagimporter_customtag_notcustomtag') {
-		my $matching = 0;
+	} elsif (($filter->{'id'} eq 'customtagimporter_customtag_customtagvalue') || ($filter->{'id'} eq 'customtagimporter_customtag_notcustomtagvalue')) {
+		# get filter param values
+		my ($customtag, $logop, $customtagvalue);
 		for my $parameter (@{$parameters}) {
 			if ($parameter->{'id'} eq 'customtag') {
 				my $values = $parameter->{'value'};
-				my $customtag = $values->[0] if (defined($values) && scalar(@{$values}) > 0);
-
-				my $sth = $dbh->prepare("select track from customtagimporter_track_attributes where track = ? and attr = ?");
-				$result = 1;
-				eval {
-					$sth->bind_param(1, $track->id);
-					$sth->bind_param(2, $customtag);
-					$sth->execute();
-					if ($sth->fetch()) {
-						$result = 0;
-					}
-				};
-				if ($@) {
-					$result = 0;
-					$log->error("Error executing SQL: $@\n$DBI::errstr");
-				}
-				$sth->finish();
-				last;
+				$customtag = $values->[0] if (defined($values) && scalar(@{$values}) > 0);
 			}
+			if ($parameter->{'id'} eq 'logop') {
+				my $values = $parameter->{'value'};
+				$logop = $values->[0] if (defined($values) && scalar(@{$values}) > 0);
+			}
+			if ($parameter->{'id'} eq 'customtagvalue') {
+				my $values = $parameter->{'value'};
+				$customtagvalue = $values->[0] if (defined($values) && scalar(@{$values}) > 0);
+			}
+		}
+		main::DEBUGLOG && $log->is_debug && $log->debug("customtag = ".Data::Dump::dump($customtag)."\nlogop = ".Data::Dump::dump($logop)."\ncustomtagvalue = ".Data::Dump::dump($customtagvalue));
+
+		if ($customtag && $logop & $customtagvalue) {
+			my $dbh = Slim::Schema->storage->dbh();
+			my $sql = "select track from customtagimporter_track_attributes where track=$trackID and type='customtag' and attr=\"$customtag\" and value ";
+
+			if ($logop eq 'lt') {
+				$sql .= "< ";
+			} elsif ($logop eq 'le') {
+				$sql .= "<= ";
+			} elsif ($logop eq 'ge') {
+				$sql .= ">= ";
+			} elsif ($logop eq 'gt') {
+				$sql .= "> ";
+			} elsif ($logop eq 'eq') {
+				$sql .= "= ";
+				$customtagvalue = quoteValue($customtagvalue);
+			} elsif ($logop eq 'contains') {
+				$sql .= "like ";
+				$customtagvalue = quoteValue($customtagvalue);
+			} elsif ($logop eq 'oneof') {
+				$sql .= "in (";
+				my @paramvalues = split(/;/, $customtagvalue);
+				my $quotedTextVal;
+
+				foreach (@paramvalues) {
+					my $thisParamVal = quoteValue($_);
+					main::DEBUGLOG && $log->is_debug && $log->debug("thisParamVal = ".Data::Dump::dump($thisParamVal));
+
+					if (looks_like_number($thisParamVal)) {
+						$quotedTextVal .= ($quotedTextVal ? ',' : '').encode_entities(trim_leadtail($thisParamVal), "&<>\'\"");
+					} else {
+						$quotedTextVal .= ($quotedTextVal ? ',' : '')."'".encode_entities(trim_leadtail($thisParamVal), "&<>\'\"")."'";
+					}
+				}
+				$customtagvalue = $quotedTextVal;
+			}
+			$sql .= "\"" unless $logop eq 'oneof';
+			if ($logop eq 'contains') {
+				$sql .= "%%";
+			}
+			$sql .= "$customtagvalue";
+			if ($logop eq 'contains') {
+				$sql .= "%%";
+			}
+			$sql .= "\"" unless $logop eq 'oneof';
+			if ($logop eq 'oneof') {
+				$sql .= ")";
+			}
+
+			main::DEBUGLOG && $log->is_debug && $log->debug("sql = ".$sql);
+			my $sth = $dbh->prepare($sql);
+			$result = 1 if $filter->{'id'} eq 'customtagimporter_customtag_notcustomtagvalue';
+			eval {
+				$sth->execute();
+				if ($sth->fetch()) {
+					$result = ($filter->{'id'} eq 'customtagimporter_customtag_notcustomtagvalue') ? 0 : 1;
+				}
+			};
+			if ($@) {
+				$result = 0;
+				$log->error("Error executing SQL: $@\n$DBI::errstr");
+			}
+			$sth->finish();
+			main::DEBUGLOG && $log->is_debug && $log->debug('Should '.($result ? '' : 'not ').'be skipped.');
 		}
 	}
 
 	return $result;
+}
+
+
+sub initMatrix {
+	main::DEBUGLOG && $log->is_debug && $log->debug('Start initializing trackinfohandler & titleformats.');
+	my $configmatrix = $prefs->get('customtagconfigmatrix');
+
+	my $availableCustomTags = Plugins::CustomTagImporter::Plugin::getAvailableCustomTags();
+	main::DEBUGLOG && $log->is_debug && $log->debug('available custom tags = '.Data::Dump::dump($availableCustomTags));
+
+	if (keys %{$availableCustomTags} > 0 && keys %{$configmatrix} > 0) {
+		foreach my $thisCustomTag (sort keys %{$availableCustomTags}) {
+			main::DEBUGLOG && $log->is_debug && $log->debug('thisCustomTag = '.$thisCustomTag);
+
+			## register track info provider
+
+			my $songdetailsmenuenabled = $configmatrix->{$thisCustomTag}->{'songdetailsmenuenabled'};
+			my $songdetailsmenuname = $configmatrix->{$thisCustomTag}->{'songdetailsmenuname'};
+			my $songdetailsmenuposition = $configmatrix->{$thisCustomTag}->{'songdetailsmenuposition'};
+
+
+			if (defined $songdetailsmenuenabled && defined $songdetailsmenuname && defined $songdetailsmenuposition) {
+				my $regID = 'CTI_TIHregID_'.$thisCustomTag;
+				main::DEBUGLOG && $log->is_debug && $log->debug('trackinfohandler ID = '.$regID);
+				Slim::Menu::TrackInfo->deregisterInfoProvider($regID);
+
+				my $possiblecontextmenupositions = [
+					"after => 'artwork'", # 0
+					"after => 'bottom'", # 1
+					"parent => 'moreinfo', isa => 'top'", # 2
+					"parent => 'moreinfo', isa => 'bottom'" # 3
+				];
+				my $thisPos = @{$possiblecontextmenupositions}[$songdetailsmenuposition];
+				Slim::Menu::TrackInfo->registerInfoProvider($regID => (
+					eval($thisPos),
+					func => sub {
+						return getTrackInfo(@_,$thisCustomTag);
+					}
+				));
+			}
+
+			## add title format
+			my $titleformatenabled = $configmatrix->{$thisCustomTag}->{'titleformatenabled'};
+
+			if (defined $titleformatenabled) {
+				my $TF_name = 'CTI_'.uc(trim_all($thisCustomTag));
+				main::DEBUGLOG && $log->is_debug && $log->debug('Registering titleformat name = '.$TF_name);
+				addTitleFormat($TF_name);
+				Slim::Music::TitleFormatter::addFormat($TF_name, sub {
+					return getTitleFormat(@_,$thisCustomTag);
+				}, 1);
+			}
+		}
+		Slim::Music::Info::clearFormatDisplayCache();
+	}
+	main::DEBUGLOG && $log->is_debug && $log->debug('Finished initializing trackinfohandler & titleformats.');
+}
+
+sub getTitleFormat {
+	my ($track, $customtag) = @_;
+	return '' if (!$track || !$customtag);
+	main::DEBUGLOG && $log->is_debug && $log->debug('customtag = '.$customtag);
+
+	my $TF_string = getCustomTagValuesForTrack($customtag, $track);
+
+	main::INFOLOG && $log->is_info && $log->info('returned title format display string for track = '.Data::Dump::dump($TF_string));
+	return $TF_string;
+}
+
+sub getTrackInfo {
+	my ($client, $url, $track, $remoteMeta, $tags, $filter, $customtag) = @_;
+	main::DEBUGLOG && $log->is_debug && $log->debug('customtag = '.$customtag);
+
+	my $returnString = getCustomTagValuesForTrack($customtag, $track);
+
+	if ($returnString) {
+		my $configmatrix = $prefs->get('customtagconfigmatrix');
+		my $songdetailsmenuname = $configmatrix->{$customtag}->{'songdetailsmenuname'};
+
+		main::INFOLOG && $log->is_info && $log->info('Got track info - '.$songdetailsmenuname.': '.$returnString);
+		return {
+			type => 'text',
+			name => $songdetailsmenuname.': '.$returnString,
+			itemvalue => $returnString,
+			itemid => $track->id,
+		};
+	}
+	return;
+}
+
+sub getCustomTagValuesForTrack {
+	my ($customtag, $track, $infohandlerCaller) = @_;
+	main::DEBUGLOG && $log->is_debug && $log->debug('getting CTI values for custom tag = '.$customtag);
+	my $result = '';
+
+	if (Slim::Music::Import->stillScanning) {
+		$log->warn('Warning: not available until library scan is completed');
+		return $result;
+	}
+
+	if ($track && !blessed($track)) {
+		main::DEBUGLOG && $log->is_debug && $log->debug('track is not blessed');
+		$track = Slim::Schema->find('Track', $track->{id});
+		if (!blessed($track)) {
+			main::DEBUGLOG && $log->is_debug && $log->debug('No track object found');
+			return $result;
+		}
+	}
+
+	my $trackID = $track->id;
+	my $dbh = Slim::Schema->dbh;
+	my $sth = $dbh->prepare("select value from customtagimporter_track_attributes where type = 'customtag' and attr = \"$customtag\" and track = $trackID");
+	my $value;
+
+	eval {
+		$sth->execute();
+		$sth->bind_col(1, \$value);
+		while ($sth->fetch()) {
+			$result .= ', ' if $result;
+			$value = Slim::Utils::Unicode::utf8decode($value, 'utf8');
+			$result .= $value;
+		}
+		$sth->finish();
+	};
+	if ($@) {
+		$log->error("Database error: $DBI::errstr");
+	}
+	main::DEBUGLOG && $log->is_debug && $log->debug("CTI values for customtag \"$customtag\" = $result");
+	return $result;
+}
+
+sub getAvailableCustomTags {
+	my $dbh = Slim::Schema->dbh;
+	my %result = ();
+	my $sth = $dbh->prepare("SELECT attr from customtagimporter_track_attributes where type = 'customtag' group by attr order by attr");
+	my $attr;
+	$sth->execute();
+	$sth->bind_col(1,\$attr);
+	while ($sth->fetch()) {
+		$result{$attr} = 1;
+	}
+	$sth->finish();
+	return \%result;
+}
+
+
+sub _setRefreshCBTimer {
+	main::DEBUGLOG && $log->is_debug && $log->debug('Killing existing timers for refresh to prevent multiple calls');
+	Slim::Utils::Timers::killOneTimer(undef, \&delayedRefresh);
+	main::DEBUGLOG && $log->is_debug && $log->debug('Scheduling a delayed refresh');
+	Slim::Utils::Timers::setTimer(undef, time() + 2, \&delayedRefresh);
+}
+
+sub delayedRefresh {
+	if (Slim::Music::Import->stillScanning) {
+		main::DEBUGLOG && $log->is_debug && $log->debug('Scan in progress. Waiting for current scan to finish.');
+		_setRefreshCBTimer();
+	} else {
+		main::DEBUGLOG && $log->is_debug && $log->debug('Starting refresh.');
+		initMatrix();
+	}
 }
 
 sub addTitleFormat {
@@ -230,118 +513,23 @@ sub addTitleFormat {
 	$serverPrefs->set('titleFormat', $titleFormats);
 }
 
-sub refreshTitleFormats {
-	$availableCTItitleFormats = getAvailableCTItitleFormats();
-	main::DEBUGLOG && $log->is_debug && $log->debug('available CTI title formats = '.Data::Dump::dump($availableCTItitleFormats));
-
-	my $selTFs = $prefs->get('selectedtitleformats');
-	if ($selTFs) {
-		my %selTFhash = scalar @{$selTFs} > 0 ? map {$_ => 1} @{$selTFs} : ();
-		main::DEBUGLOG && $log->is_debug && $log->debug('selected CTI title formats = '.Data::Dump::dump(\%selTFhash));
-
-		# register title formats for selected CTI custom tag attributes
-		if (scalar keys %{$availableCTItitleFormats} > 0) {
-			foreach my $key (sort { $a <=> $b } keys %{$availableCTItitleFormats}) {
-				my $format = $availableCTItitleFormats->{$key};
-				main::DEBUGLOG && $log->is_debug && $log->debug('format = '.Data::Dump::dump($format).' -- key = '.$key);
-				main::INFOLOG && $log->is_info && $log->info("Title format '$format': ".($selTFhash{$format} ? '' : 'NOT ').'selected in CTI settings.');
-				next unless $selTFhash{$format};
-
-				addTitleFormat("CTI_$format");
-				Slim::Music::TitleFormatter::addFormat("CTI_$format", sub {
-					my $track = shift; getTitleFormat($track, $availableCTItitleFormats->{$key});
-				 }, 1);
-				main::INFOLOG && $log->is_info && $log->info("Registered title format: CTI_$format");
-			}
-		}
-	}
-
-	Slim::Music::Info::clearFormatDisplayCache();
+sub quoteValue {
+	my $value = shift;
+	$value =~ s/\'/\'\'/g;
+	return $value;
 }
 
-sub getAvailableCTItitleFormats {
-	my $dbh = Slim::Schema->dbh;
-	my %result = ();
-	my $sth = $dbh->prepare("SELECT attr from customtagimporter_track_attributes where type = 'customtag' group by attr order by attr");
-	my $attr;
-	$sth->execute();
-	$sth->bind_col(1,\$attr);
-	my $i = 1;
-	while ($sth->fetch()) {
-		$result{$i} = uc($attr);
-		$i++;
-	}
-	$sth->finish();
-	return \%result;
+sub trim_leadtail {
+	my ($str) = @_;
+	$str =~ s{^\s+}{};
+	$str =~ s{\s+$}{};
+	return $str;
 }
 
-sub getTitleFormat {
-	my ($track, $CTIattribute) = @_;
-	my $result = '';
-
-	# get local track if unblessed
-	if ($track && !blessed($track)) {
-		main::DEBUGLOG && $log->is_debug && $log->debug('Track is not blessed');
-		my $trackObj = Slim::Schema->find('Track', $track->{id});
-		if (blessed($trackObj)) {
-			$track = $trackObj;
-		} else {
-			my $trackURL = $track->{'url'};
-			main::DEBUGLOG && $log->is_debug && $log->debug('Slim::Schema->find found no blessed track object for id. Trying to retrieve track object with url: '.Data::Dump::dump($trackURL));
-			if (defined ($trackURL)) {
-				if (Slim::Music::Info::isRemoteURL($trackURL) == 1) {
-					$track = Slim::Schema->_retrieveTrack($trackURL);
-					main::DEBUGLOG && $log->is_debug && $log->debug('Track is remote. Retrieved trackObj = '.Data::Dump::dump($track));
-				} else {
-					$track = Slim::Schema->rs('Track')->single({'url' => $trackURL});
-					main::DEBUGLOG && $log->is_debug && $log->debug('Track is not remote. TrackObj for url = '.Data::Dump::dump($track));
-				}
-			} else {
-				return '';
-			}
-		}
-	}
-
-	if ($track) {
-		my $dbh = Slim::Schema->dbh;
-		my $trackID = $track->id;
-		my $sql = "select value from customtagimporter_track_attributes where type = 'customtag' and attr = \"$CTIattribute\" and track = $trackID group by value";
-		my $sth = $dbh->prepare($sql);
-		my $value;
-		eval {
-			$sth->execute();
-			$sth->bind_col(1, \$value);
-			while ($sth->fetch()) {
-				$result .= ', ' if $result;
-				$value = Slim::Utils::Unicode::utf8decode($value, 'utf8');
-				$result .= $value;
-			}
-			$sth->finish();
-		};
-		if ($@) {
-			$log->error("Database error: $DBI::errstr");
-		}
-	}
-
-	main::INFOLOG && $log->is_info && $log->info("Finished retrieving title format: $CTIattribute = $result");
-	return $result;
-}
-
-sub _setRefreshCBTimer {
-	main::DEBUGLOG && $log->is_debug && $log->debug('Killing existing timers for refresh to prevent multiple calls');
-	Slim::Utils::Timers::killOneTimer(undef, \&delayedRefresh);
-	main::DEBUGLOG && $log->is_debug && $log->debug('Scheduling a delayed refresh');
-	Slim::Utils::Timers::setTimer(undef, time() + 2, \&delayedRefresh);
-}
-
-sub delayedRefresh {
-	if (Slim::Music::Import->stillScanning) {
-		main::DEBUGLOG && $log->is_debug && $log->debug('Scan in progress. Waiting for current scan to finish.');
-		_setRefreshCBTimer();
-	} else {
-		main::DEBUGLOG && $log->is_debug && $log->debug('Starting refresh.');
-		refreshTitleFormats();
-	}
+sub trim_all {
+	my ($str) = @_;
+	$str =~ s/ //g;
+	return $str;
 }
 
 1;

@@ -1,0 +1,84 @@
+<style type="text/css">
+	.customtaginfo-table {padding-left:20px;}
+	.customtaginfo-col-1 {text-align: center; width: 13em;}
+	.customtaginfo-col-3 {text-align: center; width: 7em;}
+	.customtaginfo-col-7 {text-align: center; width: 6em;}
+	.customtaginfo-col-2, .customtaginfo-col-6 {width: 5px;}
+	.customtaginfo-col-4, .customtaginfo-col-5 {text-align: center; width: 13em;}
+	.customtaginfo-input {width: 100%; box-sizing: border-box;}
+	.customtaginfo-table th {font-weight: bold;}
+	.customtaginfo-table td, .customtaginfo-table th {text-align: center; padding: 0.15em 0.25em 0.15em 0;}
+	.colspanbottomborder {border-bottom: 1px solid;}
+</style>
+[% page = "PLUGIN_CUSTOMTAGIMPORTER" %]
+[% PROCESS settings/header.html %]
+
+[% PROCESS plugins/CustomTagImporter/settings/subpage_chooser.html %]
+
+<br>
+<table class="customtaginfo-table">
+	<colgroup>
+		<col class="customtaginfo-col-1"/>
+		<col class="customtaginfo-col-2"/>
+		<col class="customtaginfo-col-3"/>
+		<col class="customtaginfo-col-4"/>
+		<col class="customtaginfo-col-5"/>
+		<col class="customtaginfo-col-6"/>
+		<col class="customtaginfo-col-7"/>
+	</colgroup>
+	<tr><th style="height:4px;" colspan="7"></th></tr>
+
+[% IF itemcount > 0 %]
+	<tr>
+		<th>[% "PLUGIN_CUSTOMTAGIMPORTER_DISPLAYEDTAGINFO_CUSTOMTAG" | string %]</th>
+		<th> </th>
+		<th>[% "PLUGIN_CUSTOMTAGIMPORTER_DISPLAYEDTAGINFO_ENABLED" | string %]</th>
+		<th>[% "PLUGIN_CUSTOMTAGIMPORTER_DISPLAYEDTAGINFO_SONGDETAILS_DISPLAYNAME" | string %]</th>
+		<th>[% "PLUGIN_CUSTOMTAGIMPORTER_DISPLAYEDTAGINFO_SONGDETAILS_MENU_POSITION" | string %]</th>
+		<th> </th>
+		<th>[% "PLUGIN_CUSTOMTAGIMPORTER_DISPLAYEDTAGINFO_TITLEFORMATS_ENABLE" | string %]</th>
+	</tr>
+	<tr>
+		<th style="height:4px;" colspan="7"></th>
+	</tr>
+
+	[% FOREACH thisconfig = customtagconfigmatrix; idx = loop.count %]
+	<tr>
+		<td>
+			[% thisconfig.customtag %]
+			<input type="hidden" name="pref_customtag_[% idx %]" id="customtag_[% idx %]" value="[% thisconfig.customtag %]">
+		</td>
+		<td></td>
+		<td>
+			<input name="pref_songdetailsmenuenabled_[% idx %]" id="songdetailsmenuenabled_[% idx %]" type="checkbox" [% IF thisconfig.songdetailsmenuenabled %] checked [% END %]>
+		</td>
+		<td>
+			<input type="text" class="stdedit" name="pref_songdetailsmenuname_[% idx %]" id="songdetailsmenuname_[% idx %]" value="[% thisconfig.songdetailsmenuname %]" autocomplete="off">
+		</td>
+		<td>
+			<select name="pref_songdetailsmenuposition_[% idx %]" id="songdetailsmenuposition_[% idx %]">
+				[% FOREACH option = {
+					'0' => 'PLUGIN_CUSTOMTAGIMPORTER_DISPLAYEDTAGINFO_SONGDETAILS_CONTEXTMENU_POSITION_TOP',
+					'1' => 'PLUGIN_CUSTOMTAGIMPORTER_DISPLAYEDTAGINFO_SONGDETAILS_CONTEXTMENU_POSITION_BOTTOM',
+					'2' => 'PLUGIN_CUSTOMTAGIMPORTER_DISPLAYEDTAGINFO_SONGDETAILS_CONTEXTMENU_POSITION_MOREMENU_TOP',
+					'3' => 'PLUGIN_CUSTOMTAGIMPORTER_DISPLAYEDTAGINFO_SONGDETAILS_CONTEXTMENU_POSITION_MOREMENU_BOTTOM',
+				} %]
+					<option [% IF thisconfig.songdetailsmenuposition == option.key %]selected='selected' [% END %]value="[% option.key %]">[% option.value | string %]</option>
+				[%- END -%]
+			</select>
+		</td>
+		<td></td>
+		<td>
+			<input name="pref_titleformatenabled_[% idx %]" id="titleformatenabled_[% idx %]" type="checkbox" [% IF thisconfig.titleformatenabled %] checked [% END %]">
+		</td>
+	</tr>
+	[% END %]
+
+[% ELSE %]
+	<tr><th style="height:4px;" colspan="7"></th></tr>
+	<tr><td colspan="7">[% "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_NOCUSTOMTAGSFOUND" | string %]</td></tr>
+
+[% END %]
+</table>
+<br>
+[% PROCESS settings/footer.html %]

@@ -24,22 +24,6 @@
 	[% END %]
 	<br>
 
-	[% IF titleformatOptions.size > 0 %]
-	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TITLEFORMATS" desc="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TITLEFORMATS_DESC" %]
-		<table width="100%">
-			<tr><td>
-			<select class="stdedit" name="pref_selectedtitleformats" multiple>
-			[% FOREACH option = titleformatOptions.keys.sort %]
-			[% formatname = titleformatOptions.$option %]
-				<option [% IF selectedtitleformats.$formatname %]selected [% END %]value="[% titleformatOptions.$option %]">[% titleformatOptions.$option %]</option>
-			[% END %]
-			</select>
-			</td></tr>
-		</table>
-	[% END %]
-	[% END %]
-
-
 	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGMAPPING" desc="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGMAPPING_DESC" %]
 		<input class="inputfield" type="text" class="stdedit" name="pref_customtagsmapping" id="customtagsmapping" value="[% prefs.customtagsmapping %]" size="60">
 	[% END %]

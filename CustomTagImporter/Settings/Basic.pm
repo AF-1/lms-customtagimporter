@@ -74,10 +74,6 @@ sub handler {
 	my $result = undef;
 	my $callHandler = 1;
 	if ($paramRef->{'saveSettings'}) {
-		if ($paramRef->{'pref_selectedtitleformats'} && ref($paramRef->{'pref_selectedtitleformats'}) ne 'ARRAY') {
-			$paramRef->{'pref_selectedtitleformats'} = [$paramRef->{'pref_selectedtitleformats'}];
-		}
-
 		$paramRef->{'pref_customtags'} = trim_leadtail($paramRef->{'pref_customtags'}) if $paramRef->{'pref_customtags'};
 		$paramRef->{'pref_ratingtags'} = trim_leadtail($paramRef->{'pref_ratingtags'}) if $paramRef->{'pref_ratingtags'};
 
@@ -126,14 +122,6 @@ sub beforeRender {
 	# disable manual rating if active LMS scan
 	$paramRef->{'activelmsscan'} = 1 if (!Slim::Schema::hasLibrary() || Slim::Music::Import->stillScanning);
 	$paramRef->{'activectiscan'} = 1 if $prefs->get('scanningInProgress');
-
-	$paramRef->{'titleformatOptions'} = Plugins::CustomTagImporter::Plugin::getAvailableCTItitleFormats();
-	main::DEBUGLOG && $log->is_debug && $log->debug('titleformatOptions = '.Data::Dump::dump($paramRef->{'titleformatOptions'}));
-
-	my $selTFs = $prefs->get('selectedtitleformats');
-	my %selTFsHash = map {$_ => 1} @{$selTFs};
-	$paramRef->{'selectedtitleformats'} = \%selTFsHash;
-	main::DEBUGLOG && $log->is_debug && $log->debug('selectedtitleformats = '.Data::Dump::dump($paramRef->{'selectedtitleformats'}));
 }
 
 sub trim_leadtail {

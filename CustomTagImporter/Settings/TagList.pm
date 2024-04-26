@@ -99,6 +99,7 @@ sub beforeRender {
 		while ($sth->fetch()) {
 			$attrValHash{$attr}{$value} = $valCount;
 		}
+		$sth->finish();
 	};
 	if ($@) {
 		$log->error("Running: $customTagSql got error:\n$@");
@@ -108,10 +109,16 @@ sub beforeRender {
 	if (scalar keys %attrValHash > 0) {
 		foreach my $thisAttr (keys %attrValHash) {
 			my $count = 0;
-			my $thisAttrHash = $attrValHash{$thisAttr};
+			my $attrTrackCountSQL = "select count(distinct track) from customtagimporter_track_attributes where type='customtag' and attr=\"$thisAttr\"";
 
-			foreach my $thisValue (keys %{$thisAttrHash}) {
-				$count += $attrValHash{$thisAttr}{$thisValue};
+			eval {
+				my $attrCountSth = $dbh->prepare($attrTrackCountSQL);
+				$attrCountSth->execute();
+				$count = $attrCountSth->fetchrow || 0;
+				$attrCountSth->finish();
+			};
+			if ($@) {
+				$log->error("Running: $attrTrackCountSQL got error:\n$@");
 			}
 			main::DEBUGLOG && $log->is_debug && $log->debug("count for $thisAttr = " . $count);
 			$attrTotalCount{$thisAttr} = $count;

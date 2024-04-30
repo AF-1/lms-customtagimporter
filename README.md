@@ -12,13 +12,20 @@ Custom Tag Importer
 <br><br><br>
 
 
-## Features:
+## Features
+
 * **Scan track information from custom tags in your music files** to a dedicated LMS database table.
+
 * **Scan rating values** from rating tags in your music files and use them **to set LMS track ratings**.
+
 * Includes a **list of available CTI custom tags and their values**.
+
 * Scan option: **Dump tag names found in your music files to a text file** to see what tags your files include.
+
 * **Automatic rescan**: If you start an LMS rescan, a CTI rescan is performed as part of the LMS rescan (increases LMS rescan time accordingly).
+
 * Create **title formats** using custom tags.
+
 <br><br><br>
 
 

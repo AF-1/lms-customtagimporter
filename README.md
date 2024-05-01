@@ -48,10 +48,10 @@ If you want to test a new patch that hasn't made it into a release version yet, 
 
 <details><summary>»<b>What can I do with imported custom tags?</b>«<br>&nbsp;&nbsp;&nbsp;&nbsp;»<b>Which plugins does CTI work with?</b>«</summary><br><p>
 CTI stores custom tags and values in a separate LMS database table. Since this table is not part of the LMS default setup, LMS does <i>not</i> access or use keys or values from this table by default.<br><br>In other words, what you can do with them <b>depends on other plugins</b>. Here are some <i>examples</i>:<br><br>
-&nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/lms-dynamicplaylistcreator"><b>Dynamic Playlist Creator</b></a> / <a href="https://github.com/AF-1/lms-dynamicplaylists"><b>Dynamic Playlists</b></a>: create/play smart playlists based on custom tag values<br><br>
-&nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/lms-virtuallibrarycreator"><b>Virtual Library Creator</b></a>: create virtual libraries (with optional browse menus) using custom tags<br><br>
+&nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/#-dynamic-playlist-creator"><b>Dynamic Playlist Creator</b></a> / <a href="https://github.com/AF-1/#-dynamic-playlists"><b>Dynamic Playlists</b></a>: create/play smart playlists based on custom tag values<br><br>
+&nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/#-virtual-library-creator"><b>Virtual Library Creator</b></a>: create virtual libraries (with optional browse menus) using custom tags<br><br>
 &nbsp;&nbsp;&nbsp;- <b>CustomBrowse</b> (unsupported): create menus using custom tags<br><br>
-&nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/lms-customskip"><b>Custom Skip</b></a>: skip tracks with/without specific custom tags<br><br>
+&nbsp;&nbsp;&nbsp;- <a href="https://github.com/AF-1/#-custom-skip"><b>Custom Skip</b></a>: skip tracks with/without specific custom tags<br><br>
 
 </p></details>
 <br>

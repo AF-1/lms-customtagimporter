@@ -2,7 +2,7 @@ PLUGIN_CUSTOMTAGIMPORTER
 	EN	Custom Tag Importer
 
 PLUGIN_CUSTOMTAGIMPORTER_DESC
-	EN	Scans track information from custom tags in your music files (incl. rating tags). Screenshots and more information on the GitHub page.
+	EN	Scans track information from custom tags in your music files (incl. rating tags). More information on the GitHub page.
 
 PLUGIN_CUSTOMTAGIMPORTER_LOG_DESC
 	EN	Log of plugin CustomTagImporter

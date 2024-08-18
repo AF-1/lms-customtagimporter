@@ -57,6 +57,7 @@ sub initPlugin {
 
 	initPrefs();
 	Slim::Control::Request::subscribe(\&_setRefreshCBTimer, [['rescan'], ['done']]);
+	Slim::Control::Request::addDispatch(['customtagimporter', 'changedstatus','_status'],[0, 0, 0, undef]);
 
 	if (main::WEBUI) {
 		require Plugins::CustomTagImporter::Settings::Basic;
@@ -93,36 +94,42 @@ sub initPrefs {
 		}, 'customtagconfigmatrix');
 }
 
+sub getCustomBrowseMenusTemplates {
+	return getCustomBrowseTemplates(@_);
+}
 
 sub getCustomBrowseTemplates {
-	my $client = shift;
-	my $pluginVersion = shift;
-
+	my ($client, $pluginVersion) = @_;
 	my $CBversion = Slim::Utils::PluginManager->isEnabled('Plugins::CustomBrowseMenus::Plugin') ? 'CustomBrowseMenus' : 'CustomBrowse';
 	return Plugins::CustomTagImporter::CBTemplateReader::getTemplates($client, 'CustomTagImporter', $pluginVersion, 'PluginCache/'.$CBversion, 'CBMenuTemplates', 'xml');
 }
 
-sub getCustomBrowseTemplateData {
-	my $client = shift;
-	my $templateItem = shift;
-	my $parameterValues = shift;
+sub getCustomBrowseMenusTemplateData {
+	return getCustomBrowseTemplateData(@_);
+}
 
+sub getCustomBrowseTemplateData {
+	my ($client, $templateItem, $parameterValues) = @_;
 	my $data = Plugins::CustomTagImporter::CBTemplateReader::readTemplateData('CustomTagImporter', 'CBMenuTemplates', $templateItem->{'id'});
 	return $data;
 }
 
+sub getCustomBrowseMenusContextTemplates {
+	return getCustomBrowseContextTemplates(@_);
+}
+
 sub getCustomBrowseContextTemplates {
-	my $client = shift;
-	my $pluginVersion = shift;
+	my ($client, $pluginVersion) = @_;
 	my $CBversion = Slim::Utils::PluginManager->isEnabled('Plugins::CustomBrowseMenus::Plugin') ? 'CustomBrowseMenus' : 'CustomBrowse';
 	return Plugins::CustomTagImporter::CBTemplateReader::getTemplates($client, 'CustomTagImporter', $pluginVersion, 'PluginCache/'.$CBversion, 'CBContextMenuTemplates', 'xml');
 }
 
-sub getCustomBrowseContextTemplateData {
-	my $client = shift;
-	my $templateItem = shift;
-	my $parameterValues = shift;
+sub getCustomBrowseMenusContextTemplateData {
+	return getCustomBrowseContextTemplateData(@_);
+}
 
+sub getCustomBrowseContextTemplateData {
+	my ($client, $templateItem, $parameterValues) = @_;
 	my $data = Plugins::CustomTagImporter::CBTemplateReader::readTemplateData('CustomTagImporter', 'CBContextMenuTemplates', $templateItem->{'id'});
 	return $data;
 }

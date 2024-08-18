@@ -446,6 +446,7 @@ sub exitScan {
 		main::INFOLOG && $log->is_info && $log->info('Rescan completed (with errors) after '.(time()-($scanningContext->{'scanStartTime'})).' seconds.');
 	} else {
 		$prefs->set('scanResult', 1);
+		Slim::Control::Request::notifyFromArray(undef, ['customtagimporter', 'changedstatus', 1]) unless $scanningContext->{'importerCall'};
 		main::INFOLOG && $log->is_info && $log->info('Rescan completed after '.(time()-($scanningContext->{'scanStartTime'})).' seconds.');
 	}
 

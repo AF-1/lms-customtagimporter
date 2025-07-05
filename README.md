@@ -67,8 +67,13 @@ I think title formats were not meant to be added and removed while the server is
 
 ## Report a new issue
 
-To report a new issue please file a GitHub [**issue report**](https://github.com/AF-1/lms-customtagimporter/issues/new/choose).<br><br>
-If you use this plugin and like it, perhaps you could give it a :star: so that other users can discover it (in their News Feed). Thank you.
+To report a new issue please file a GitHub [**issue report**](https://github.com/AF-1/lms-customtagimporter/issues/new/choose).
+<br><br><br>
+
+
+## ⭐ Contributing
+
+If you find this plugin useful, please consider giving it a <img src="screenshots/githubstar.png" width="20" height="20" alt="star" /> on GitHub (top right of this page) so that other users can discover it (in their News Feed).
 <br><br><br><br>
 
 [^1]:If you want localized strings in your language, please read <a href="https://github.com/AF-1/sobras/wiki/Adding-localization-to-LMS-plugins"><b>this</b></a>. Based on Erland's CustomScan plugin

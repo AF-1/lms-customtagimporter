@@ -63,7 +63,7 @@ CTI stores custom tags and values in a separate LMS database table. Since this t
 I think title formats were not meant to be added and removed while the server is running. Restarting the server will load your new selection of custom tags as title formats.
 </p></details><br>
 
-<details><summary>»<b>Can this plugin be <i>displayed in my language</i>?</b>«</summary><br><p>If you want localized strings in your language, please read <a href="https://github.com/AF-1/sobras/wiki/Adding-localization-to-LMS-plugins"><b>this</b></a>.</p></details><br>
+<details><summary>»<b>Can this plugin be <i>displayed in my language</i>?</b>«</summary><br><p>If you want localized strings in your language, please read <a href="https://github.com/AF-1/sobras/wiki/Adding-localization-to-LMS-plugins"><b>this</b></a>.</p></details>
 
 <br><br><br>
 

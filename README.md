@@ -1,7 +1,7 @@
 Custom Tag Importer
 ====
 
-**Custom Tag Importer**[^1] scans track information from custom tags in your music files. That includes rating tags because a rating tag is basically just a custom tag for ratings.
+**Custom Tag Importer** scans track information from custom tags in your music files. That includes rating tags because a rating tag is basically just a custom tag for ratings.
 <br><br>
 
 [⬅️ **Back to the list of all plugins**](https://github.com/AF-1/)
@@ -10,7 +10,7 @@ Custom Tag Importer
 
 <br><br>
 
-## Screenshot[^2]
+## Screenshot[^1]
 <img src="screenshots/cti.gif" width="100%">
 <br><br><br>
 
@@ -61,7 +61,10 @@ CTI stores custom tags and values in a separate LMS database table. Since this t
 
 <details><summary>»<b>I have (de)selected a custom tag as a title format on the CTI settings page but it still only shows the name of the title format not the value.</b>«</summary><br><p>
 I think title formats were not meant to be added and removed while the server is running. Restarting the server will load your new selection of custom tags as title formats.
-</p></details>
+</p></details><br>
+
+<details><summary>»<b>Can this plugin be <i>displayed in my language</i>?</b>«</summary><br><p>If you want localized strings in your language, please read <a href="https://github.com/AF-1/sobras/wiki/Adding-localization-to-LMS-plugins"><b>this</b></a>.</p></details><br>
+
 <br><br><br>
 
 
@@ -76,5 +79,4 @@ To report a new issue please file a GitHub [**issue report**](https://github.com
 If you find this project useful, giving it a <img src="screenshots/githubstar.png" width="20" height="20" alt="star" /> (top right of this page) is a great way to show your support and help others discover it. Thank you.
 <br><br><br><br>
 
-[^1]:If you want localized strings in your language, please read <a href="https://github.com/AF-1/sobras/wiki/Adding-localization-to-LMS-plugins"><b>this</b></a>. Based on Erland's CustomScan plugin
-[^2]: The screenshots might not correspond to the UI of the latest release in every detail.
+[^1]: The screenshots might not correspond to the UI of the latest release in every detail.

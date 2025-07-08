@@ -11,7 +11,7 @@ Custom Tag Importer
 
 <br><br>
 
-## Screenshot[^1]
+## Screenshots[^1]
 <img src="screenshots/cti.gif" width="100%">
 <br><br><br>
 

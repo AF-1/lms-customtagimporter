@@ -30,7 +30,7 @@ Custom Tag Importer
 
 * Create **title formats** using custom tags.
 
-<br><br><br>
+<br><br>
 
 
 ## Installation
@@ -38,6 +38,7 @@ Custom Tag Importer
 **Custom Tag Importer** is available from the LMS plugin library: **LMS > Settings > Manage Plugins**.<br>
 
 If you want to test a new patch that hasn't made it into a release version yet, you'll have to [install the plugin manually](https://github.com/AF-1/sobras/wiki/Manual-installation-of-LMS-plugins).
+
 <br><br><br>
 
 

@@ -17,7 +17,7 @@ PLUGIN_CUSTOMTAGIMPORTER_GITHUB_LINK_TEXT
 	EN	Click here for more information (incl. FAQ).
 
 PLUGIN_CUSTOMTAGIMPORTER_GITHUB_LINK
-	EN	https://github.com/AF-1/#-custom-tag-importer
+	EN	https://github.com/AF-1
 
 PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS
 	EN	Custom Tags

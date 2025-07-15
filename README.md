@@ -7,7 +7,7 @@ Custom Tag Importer
 
 > [!NOTE]
 > ⚠️ This plugin still contains browse menu templates for the *Custom Browse* or *Custom Browse Menus* plugins.
-> I have not removed them because they cannot affect CTI core function.<br>
+> I have not removed them because they cannot affect CTI core functions.<br>
 > But I don't maintain or support these 2 plugins. So if the menu templates stop working at some point, I will not fix them.
 
 <br><br>

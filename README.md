@@ -5,6 +5,13 @@ Custom Tag Importer
 **Custom Tag Importer** scans track information from custom tags in your music files. That includes rating tags because a rating tag is basically just a custom tag for ratings.
 <br><br>
 
+> [!NOTE]
+> ⚠️ This plugin still includes browse menu templates for the Custom Browse or Custom Browse Menus plugins (because they can't break anything).<br>
+> But I don't maintain or support these plugins. So if those menu templates stop working at some point, I won't fix them.
+
+<br><br>
+
+
 [⬅️ **Back to the list of all plugins**](https://github.com/AF-1/)
 <br><br>
 **Use the** &nbsp; <img src="screenshots/menuicon.png" width="30"> &nbsp;**icon** (top right) to **jump directly to a specific section.**

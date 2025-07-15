@@ -6,8 +6,9 @@ Custom Tag Importer
 <br><br>
 
 > [!NOTE]
-> ⚠️ This plugin still includes browse menu templates for the Custom Browse or Custom Browse Menus plugins (because they can't break anything).<br>
-> But I don't maintain or support these plugins. So if those menu templates stop working at some point, I won't fix them.
+> ⚠️ This plugin still includes browse menu templates for the *Custom Browse* or *Custom Browse Menus* plugins.
+> I didn't remove them because they can't interfere with the plugin's core functions.<br>
+> But I don't maintain or support these 2 plugins. So if those menu templates stop working at some point, I won't fix them.
 
 <br><br>
 

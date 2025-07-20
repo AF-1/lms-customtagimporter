@@ -19,11 +19,6 @@ Custom Tag Importer
 
 <br><br>
 
-## Screenshots[^1]
-<img src="screenshots/cti.gif" width="100%">
-<br><br><br>
-
-
 ## Features
 
 * **Scan track information from custom tags in your music files** to a dedicated LMS database table.
@@ -39,6 +34,11 @@ Custom Tag Importer
 * Create **title formats** using custom tags.
 
 <br><br>
+
+
+## Screenshots[^1]
+<img src="screenshots/cti.gif" width="100%">
+<br><br><br>
 
 
 ## Installation

@@ -80,7 +80,7 @@ sub initPrefs {
 	});
 	$prefs->set('scanningInProgress', 0);
 	$prefs->set('scanResult', 0);
-	$prefs->setValidate({'validator' => 'intlimit', 'low' => 5, 'high' => 255}, 'ratingtagmax');
+	$prefs->setValidate({'validator' => 'intlimit', 'low' => 1, 'high' => 255}, 'ratingtagmax');
 
 	$prefs->setChange(\&Plugins::CustomTagImporter::Importer::toggleUseImporter, 'autorescan');
 	$prefs->setChange(sub {

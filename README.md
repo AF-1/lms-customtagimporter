@@ -6,8 +6,8 @@ Custom Tag Importer
 <br clear="right"><br>
 
 > [!NOTE]
-> ⚠️ This plugin still contains browse menu templates for the deprecated *Custom Browse* plugin.
-> If you absolutely have to use custom browse menus, consider the newer fork [*Custom Browse Menus*](https://github.com/AF-1/lms-custombrowsemenus).
+> ⚠️ This plugin still contains browse menu templates for the deprecated *Custom Browse* plugin.<br>
+> If you absolutely have to use custom browse menus, consider the newer fork [*Custom Browse Menus*](https://github.com/AF-1/lms-custombrowsemenus).<br>
 > I have not removed the templates because they cannot affect CTI core functions.<br>
 > But I don't maintain or support these 2 plugins. So if the menu templates stop working at some point, I will not fix them.
 

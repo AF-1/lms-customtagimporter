@@ -75,7 +75,7 @@ I think title formats were not meant to be added and removed while the server is
 ## Report a new issue
 
 To report a new issue please file a GitHub [**issue report**](https://github.com/AF-1/lms-customtagimporter/issues/new/choose).
-<br><br>
+<br><br><br>
 
 ---
 

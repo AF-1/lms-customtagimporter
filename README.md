@@ -75,12 +75,10 @@ I think title formats were not meant to be added and removed while the server is
 ## Report a new issue
 
 To report a new issue please file a GitHub [**issue report**](https://github.com/AF-1/lms-customtagimporter/issues/new/choose).
-<br><br><br>
+<br><br>
+---
 
-
-## ⭐ Help others discover this project
-
-If you find this project useful, giving it a <img src="screenshots/githubstar.png" width="20" height="20" alt="star" /> (top right of this page) is a great way to show your support and help others discover it. Thank you.
+If this project was useful to you, you can star the repository using the <img src="screenshots/githubstar.png" width="20" height="20" alt="star" /> button in the top-right corner of this page.
 <br><br><br><br>
 
 [^1]: The screenshots might not correspond to the UI of the latest release in every detail.

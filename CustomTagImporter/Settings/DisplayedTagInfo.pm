@@ -20,6 +20,7 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Misc;
 use Slim::Utils::Strings;
+use Plugins::CustomTagImporter::Common ':all';
 
 my $prefs = preferences('plugin.customtagimporter');
 my $log = logger('plugin.customtagimporter');
@@ -120,19 +121,6 @@ sub handler {
 	$result = $class->SUPER::handler($client, $paramRef);
 
 	return $result;
-}
-
-sub trim_all {
-	my ($str) = @_;
-	$str =~ s/ //g;
-	return $str;
-}
-
-sub trim_leadtail {
-	my ($str) = @_;
-	$str =~ s{^\s+}{};
-	$str =~ s{\s+$}{};
-	return $str;
 }
 
 sub is_integer {

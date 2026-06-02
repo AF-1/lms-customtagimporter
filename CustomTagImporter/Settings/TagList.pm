@@ -55,15 +55,12 @@ sub pages {
 }
 
 sub prefs {
-	return $prefs;
+	return ($prefs);
 }
 
 sub handler {
 	my ($class, $client, $paramRef) = @_;
-	my $result = undef;
-
-	$result = $class->SUPER::handler($client, $paramRef);
-	return $result;
+	return $class->SUPER::handler($client, $paramRef);
 }
 
 sub beforeRender {
@@ -99,16 +96,15 @@ sub beforeRender {
 	if (scalar keys %attrValHash > 0) {
 		foreach my $thisAttr (keys %attrValHash) {
 			my $count = 0;
-			my $attrTrackCountSQL = "select count(distinct track) from customtagimporter_track_attributes where type='customtag' and attr=\"$thisAttr\"";
 
 			eval {
-				my $attrCountSth = $dbh->prepare($attrTrackCountSQL);
-				$attrCountSth->execute();
+				my $attrCountSth = $dbh->prepare("SELECT count(distinct track) FROM customtagimporter_track_attributes WHERE type = 'customtag' AND attr = ?");
+				$attrCountSth->execute($thisAttr);
 				$count = $attrCountSth->fetchrow || 0;
 				$attrCountSth->finish();
 			};
 			if ($@) {
-				$log->error("Running: $attrTrackCountSQL got error:\n$@");
+				$log->error("Error getting track count for attr '$thisAttr': $@");
 			}
 			main::DEBUGLOG && $log->is_debug && $log->debug("count for $thisAttr = " . $count);
 			$attrTotalCount{$thisAttr} = $count;

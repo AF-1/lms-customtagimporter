@@ -21,14 +21,14 @@ use File::Next;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Misc;
+use Plugins::CustomTagImporter::Common ':all';
 
 my $prefs = preferences('plugin.customtagimporter');
 my $log = logger('plugin.customtagimporter');
 my $plugin;
 
 sub new {
-	my $class = shift;
-	$plugin = shift;
+	my ($class, $plugin) = @_;
 	$class->SUPER::new($plugin,1);
 }
 
@@ -59,7 +59,7 @@ sub prefs {
 
 sub handler {
 	my ($class, $client, $paramRef) = @_;
-	my $result = undef;
+	my $result;
 	my $callHandler = 1;
 	if ($paramRef->{'saveSettings'}) {
 		$paramRef->{'pref_customtags'} = trim_leadtail($paramRef->{'pref_customtags'}) if $paramRef->{'pref_customtags'};
@@ -110,13 +110,6 @@ sub beforeRender {
 	# disable manual rating if active LMS scan
 	$paramRef->{'activelmsscan'} = 1 if (!Slim::Schema::hasLibrary() || Slim::Music::Import->stillScanning);
 	$paramRef->{'activectiscan'} = 1 if $prefs->get('scanningInProgress');
-}
-
-sub trim_leadtail {
-	my ($str) = @_;
-	$str =~ s{^\s+}{};
-	$str =~ s{\s+$}{};
-	return $str;
 }
 
 1;

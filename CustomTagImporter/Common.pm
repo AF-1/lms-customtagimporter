@@ -30,7 +30,7 @@ my %dumpedTagNames;
 
 use base 'Exporter';
 our %EXPORT_TAGS = (
-	all => [qw(commit rollback initDatabase rescan abortScan isScanning countAvailableCustomTags)],
+	all => [qw(initDatabase rescan abortScan isScanning countAvailableCustomTags quoteValue trim_leadtail trim_all)],
 );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{all} } );
 
@@ -173,7 +173,7 @@ sub initDatabase {
 		$log->error("Database error: $DBI::errstr");
 	}
 	$sth->finish();
-	main::DEBUGLOG && $log->is_debug && $log->debug($tableExists ? 'CTI table table found.' : 'No CTI table table found.');
+	main::DEBUGLOG && $log->is_debug && $log->debug($tableExists ? 'CTI table found.' : 'No CTI table found.');
 
 	unless ($tableExists) {
 		my $createDBsql = "CREATE TABLE IF NOT EXISTS customtagimporter_track_attributes (
@@ -207,11 +207,10 @@ sub executeSQLstat {
 
 	for my $line (split(/[\n\r]/, $statement)) {
 		# skip empty lines
-		$line =~ s/^\s*//o;
-
+		$line =~ s/^\s*//;
 		next if $line =~ /^\s*$/;
 
-		if ($line =~ /^\s*(?:CREATE|SET|INSERT|UPDATE|DELETE|DROP|SELECT|ALTER|DROP)\s+/oi) {
+		if ($line =~ /^\s*(?:CREATE|SET|INSERT|UPDATE|DELETE|DROP|SELECT|ALTER)\s+/oi) {
 			$inStatement = 1;
 		}
 
@@ -228,7 +227,6 @@ sub executeSQLstat {
 		}
 		$statement .= $line if $inStatement;
 	}
-	commit($dbh);
 }
 
 sub rescan {
@@ -260,8 +258,7 @@ sub rescan {
 
 sub initTrackScan {
 	my $importerCall = shift;
-	my $scanningContext->{'scanStartTime'} = time();
-
+	my $scanningContext = {'scanStartTime' => time()};
 	clearDBtable();
 
 	my $dbh = Slim::Schema->dbh;
@@ -270,7 +267,7 @@ sub initTrackScan {
 	@libraryTrackIDs = ();
 	my $sth = $dbh->prepare("SELECT tracks.id from tracks where tracks.audio = 1 and tracks.remote = 0 and tracks.content_type != 'cpl' and tracks.content_type != 'src' and tracks.content_type != 'ssp' and tracks.content_type != 'dir' and tracks.content_type is not null group by tracks.id order by tracks.id asc");
 	$sth->execute();
-	my ($id, $url);
+	my $id;
 	$sth->bind_col(1, \$id);
 	while ($sth->fetch()) {
 		push @libraryTrackIDs, $id;
@@ -323,7 +320,7 @@ sub scanTracksForImporter {
 	exitScan($scanningContext);
 	if ($progress) {
 		$progress->final($params->{count});
-		$log->error(sprintf('Finished in %.3f seconds', $progress->duration));
+		main::INFOLOG && $log->is_info && $log->info(sprintf('Finished in %.3f seconds', $progress->duration));
 	}
 	return 0;
 }
@@ -331,7 +328,7 @@ sub scanTracksForImporter {
 sub scanTrack {
 	my $scanningContext = shift;
 
-	my $trackID = undef;
+	my $trackID;
 	if (defined($scanningContext->{'currentTrackNo'})) {
 		$trackID = shift @libraryTrackIDs;
 	}
@@ -363,9 +360,7 @@ sub getScanTrackAttributes {
 
 		if ($attributes && scalar(@{$attributes}) > 0) {
 			for my $attribute (@{$attributes}) {
-				my $sql = undef;
-				$sql = "INSERT INTO customtagimporter_track_attributes (track, url, urlmd5, type, attr, value, valuesort) values (?, ?, ?, ?, ?, ?, ?)";
-				my $sth = $dbh->prepare($sql);
+				my $sth = $dbh->prepare("INSERT INTO customtagimporter_track_attributes (track, url, urlmd5, type, attr, value, valuesort) VALUES (?, ?, ?, ?, ?, ?, ?)");
 				eval {
 					$sth->bind_param(1, $track->id);
 					$sth->bind_param(2, $track->url);
@@ -385,13 +380,9 @@ sub getScanTrackAttributes {
 					}
 					$sth->bind_param(7, $attribute->{'valuesort'});
 					$sth->execute();
-					commit($dbh);
 				};
 				if ($@) {
 					$log->error("Database error: $DBI::errstr");
-					eval {
-						rollback($dbh);
-					};
 					$errors++;
 				}
 				$sth->finish();
@@ -413,7 +404,6 @@ sub exitScan {
 	main::DEBUGLOG && $log->is_debug && $log->debug('Optimizing SQLite database');
 	my $dbh = Slim::Schema->dbh;
 	$dbh->do("ANALYZE customtagimporter_track_attributes");
-	commit($dbh);
 	if (!isScanning(undef)) {
 		$scanningAborted = 0;
 	}
@@ -510,7 +500,7 @@ sub scanCustomTagTrack {
 				} else {
 					main::DEBUGLOG && $log->is_debug && $log->debug("Got tag: $t = (binary data)");
 				}
-				if (ref($tags->{$t}) eq 'ARRAY' && $t ne 'APIC' && $t ne 'GEOB' && $t ne 'PRIV' && $t ne 'PRIV' && $t ne 'ASFLeakyBucketPairs' && $t ne 'WM/Picture') {
+				if (ref($tags->{$t}) eq 'ARRAY' && $t ne 'APIC' && $t ne 'GEOB' && $t ne 'PRIV' && $t ne 'ASFLeakyBucketPairs' && $t ne 'WM/Picture') {
 					my $array = $tags->{$t};
 					for my $item (@{$array}) {
 						main::DEBUGLOG && $log->is_debug && $log->debug("Got array item: $item");
@@ -543,7 +533,7 @@ sub scanCustomTagTrack {
 
 		my $customTagMappingProperty = $prefs->get('customtagsmapping');
 		if (defined($customTagMappingProperty)) {
-			$customTagMappingProperty =~ s/\\,/\\COMMA/;
+			$customTagMappingProperty =~ s/\\,/\\COMMA/g;
 		}
 		my $customSortTagProperty = $prefs->get('customsorttags');
 		my $singleValueTagProperty = $prefs->get('singlecustomtags');
@@ -669,7 +659,7 @@ sub scanCustomTagTrack {
 							}
 						} elsif (defined($ratingTagsHash{uc($tag)})) {
 							$ratingNumber = $tags->{$tag};
-							if ($ratingNumber && $ratingNumber =~ /^\d+.?\d*$/) {
+							if ($ratingNumber && $ratingNumber =~ /^\d+[.,]?\d*$/) {
 								$ratingNumber =~ s/,/./;
 								$ratingNumber = floor($ratingNumber*100/$ratingtagmax);
 								if ($ratingNumber > 100) {
@@ -962,7 +952,7 @@ sub scanCustomTagTrack {
 
 			for my $item (@result) {
 				if (exists $item->{'sorttag'}) {
-					my $values = undef;
+					my $values;
 					if (exists $resultHash->{$item->{'sorttag'}}) {
 						$values = $resultHash->{$item->{'sorttag'}};
 					} elsif (exists $resultSortHash->{$item->{'sorttag'}}) {
@@ -1020,17 +1010,12 @@ sub rateScannedTracks {
 	### unrate tracks in LMS db
 
 	$started = time();
-	my $sqlunrate = "update tracks_persistent set rating = null where tracks_persistent.rating > 0;";
-	my $unrate_sth = $dbh->prepare($sqlunrate);
+	my $unrate_sth = $dbh->prepare("UPDATE tracks_persistent SET rating = NULL WHERE tracks_persistent.rating > 0");
 	eval {
 		$unrate_sth->execute();
-		commit($dbh);
 	};
 	if ($@) {
 		$log->error("Database error: $DBI::errstr");
-		eval {
-			rollback($dbh);
-		};
 	}
 	$unrate_sth->finish();
 	main::DEBUGLOG && $log->is_debug && $log->debug('Pt 2: Unrating tracks in LMS db took '.(time() - $started).' seconds.');
@@ -1050,13 +1035,9 @@ sub rateScannedTracks {
 			$rate_sth->bind_param(1, $rating100ScaleValue);
 			$rate_sth->bind_param(2, $ratedTrackurlmd5);
 			$rate_sth->execute();
-			commit($dbh);
 		};
 		if ($@) {
 			$log->error("Database error: $DBI::errstr");
-			eval {
-				rollback($dbh);
-			};
 		}
 	}
 	$rate_sth->finish();
@@ -1072,13 +1053,12 @@ sub rateScannedTracks {
 }
 
 sub resetRatingsToCTIvalues {
-	my $scanningContext->{'isReset'} = 1;
+	my $scanningContext = {'isReset' => 1};
 	rateScannedTracks($scanningContext);
 }
 
 sub createTagHash {
-	my $array1 = shift;
-	my $array2 = shift;
+	my ($array1, $array2) = @_;
 
 	my %resultHash = ();
 	my @items = @{$array1};
@@ -1088,7 +1068,7 @@ sub createTagHash {
 
 	for my $item (@items) {
 		if (exists $resultHash{$item->{'name'}}) {
-			my $values = undef;
+			my $values;
 			if (ref($resultHash{$item->{'name'}}) eq 'ARRAY') {
 				$values = $resultHash{$item->{'name'}};
 			} else {
@@ -1122,8 +1102,7 @@ sub splitTag {
 }
 
 sub getRawMP3Tags {
-	my $url = shift;
-	my $tags = shift;
+	my ($url, $tags) = @_;
 
 	my $rawTags;
 	my $file = Slim::Utils::Misc::pathFromFileURL($url);
@@ -1173,18 +1152,23 @@ sub countAvailableCustomTags {
 	return $thisCount;
 }
 
-sub commit {
-	my $dbh = shift;
-	if (!$dbh->{'AutoCommit'}) {
-		$dbh->commit();
-	}
+sub quoteValue {
+	my $value = shift;
+	$value =~ s/\'/\'\'/g;
+	return $value;
 }
 
-sub rollback {
-	my $dbh = shift;
-	if (!$dbh->{'AutoCommit'}) {
-		$dbh->rollback();
-	}
+sub trim_leadtail {
+	my ($str) = @_;
+	$str =~ s{^\s+}{};
+	$str =~ s{\s+$}{};
+	return $str;
+}
+
+sub trim_all {
+	my ($str) = @_;
+	$str =~ s/ //g;
+	return $str;
 }
 
 1;

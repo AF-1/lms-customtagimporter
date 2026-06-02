@@ -20,26 +20,12 @@ use FindBin qw($Bin);
 use Cache::Cache qw($EXPIRES_NEVER);
 
 my $serverPrefs = preferences('server');
-my $log = Slim::Utils::Log->addLogCategory({
-	'category' => 'plugin.customtagimporter',
-	'defaultLevel' => 'ERROR',
-	'description' => 'PLUGIN_CUSTOMTAGIMPORTER',
-});
+my $log = Slim::Utils::Log::logger('plugin.customtagimporter');
 
 sub getTemplates {
-	my $client = shift;
-	my $mainPlugin = shift;
-	my $pluginVersion = shift;
-	my $cachePrefix = shift;
-	my $directory = shift;
-	my $extension = shift;
-	my $templateType = shift;
-	my $contentType = shift;
-	my $resultType = shift;
-	my $raw = shift;
+	my ($client, $mainPlugin, $pluginVersion, $cachePrefix, $directory, $extension, $templateType, $contentType, $resultType, $raw) = @_;
 
-	my $cacheName = undef;;
-	my $cache = undef;
+	my ($cacheName, $cache);
 	if ($cachePrefix) {
 		$cacheName = $cachePrefix."/".$mainPlugin."/".$directory;
 		my $cacheVersion = $pluginVersion;
@@ -59,7 +45,7 @@ sub getTemplates {
 		$resultType = $templateType;
 	}
 
-	my $cacheItems = undef;
+	my $cacheItems;
 	if (defined($cache)) {
 		$cacheItems = $cache->get($cacheName);
 		if (!defined($cacheItems)) {
@@ -115,10 +101,7 @@ sub getTemplates {
 }
 
 sub readTemplateData {
-	my $mainPlugin = shift;
-	my $dir = shift;
-	my $template = shift;
-	my $extension = shift;
+	my ($mainPlugin, $dir, $template, $extension) = @_;
 	main::DEBUGLOG && $log->is_debug && $log->debug("Loading template data for $template");
 
 	if (!defined($extension)) {
@@ -126,7 +109,7 @@ sub readTemplateData {
 	}
 	my @pluginDirs = Slim::Utils::OSDetect::dirsFor('Plugins');
 
-	my $templateDir = undef;
+	my $templateDir;
 	for my $plugindir (@pluginDirs) {
 		next unless -d catdir($plugindir, $mainPlugin, $dir);
 		$templateDir = catdir($plugindir, $mainPlugin, $dir);
@@ -140,15 +123,12 @@ sub readTemplateData {
 }
 
 sub readTemplateConfiguration {
-	my $templateId = shift;
-	my $path = shift;
-	my $templateType = shift;
-	my $raw = shift;
+	my ($templateId, $path, $templateType, $raw) = @_;
 	main::DEBUGLOG && $log->is_debug && $log->debug("Loading template configuration for $templateId");
 
 	# read_file from File::Slurp
 	my $content = eval { read_file($path) };
-	my $template = undef;
+	my $template;
 	if ($raw) {
 		my $parsedTemplate = parseTemplateContent($templateId, $templateType, $content);
 		if ($parsedTemplate) {
@@ -161,12 +141,9 @@ sub readTemplateConfiguration {
 }
 
 sub parseTemplateContent {
-	my $id = shift;
-	my $templateType = shift;
-	my $content = shift;
+	my ($id, $templateType, $content) = @_;
 
-	my $template = undef;
-
+	my $template;
 	if ($content) {
 		$content = Slim::Utils::Unicode::utf8decode($content, 'utf8');
 		my $xml = eval { XMLin($content, forcearray => ["parameter"], keyattr => []) };
@@ -184,11 +161,7 @@ sub parseTemplateContent {
 		undef $content;
 
 	} else {
-		if ($@) {
-			$log->error("Unable to read $templateType configuration for $id:\n$@");
-		} else {
-			$log->error("Unable to to read $templateType configuration for $id");
-		}
+		$log->error("Unable to read $templateType configuration for $id" . ($@ ? ": $@" : ''));
 	}
 	return $template;
 }

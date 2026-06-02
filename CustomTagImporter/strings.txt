@@ -38,7 +38,7 @@ PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGMAPPING
 	EN	Tag mapping
 
 PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGMAPPING_DESC
-	EN	<b>Comma</b> separated list of the tags that should be mapped to other tags.<br><br>For more information and examples see the <a href="https://github.com/AF-1/lms-customtagimporter/wiki">GitHub wiki pages</a>.
+	EN	Tag mapping lets you create <b>new virtual tags</b> from already scanned tags — without adding them to your music files. Use it to derive tags (e.g. <i>DECADE</i> from <i>YEAR</i>), build fallback chains across multiple tags, or combine parts of different tags into one.<br>Separate multiple mappings with a <b>comma</b>. Use <b>\,</b> to include a literal comma inside a mapping definition.<br><br><i>Mapping types:</i> <b>oneof</b> (use first tag that has a value), <b>as</b> (like oneof, typically with a regex), <b>combine</b> (concatenate values from multiple tags).<br><i>Modifiers:</i> <b>(exp&nbsp;=&nbsp;REGEX)</b> extracts the first capture group from the tag value; <b>(text=STRING)</b> appends a fixed string if the tag exists.<br><br>For detailed documentation and examples see the <a href="https://github.com/AF-1/lms-customtagimporter/wiki">GitHub wiki</a>.
 
 PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_SORTTAGMAPPING
 	EN	Sort tag mapping

@@ -32,7 +32,6 @@ my $log = Slim::Utils::Log->addLogCategory({
 	'defaultLevel' => 'ERROR',
 	'description' => 'PLUGIN_CUSTOMTAGIMPORTER',
 });
-my $availableCTItitleFormats = ();
 
 sub initPlugin {
 	my $class = shift;
@@ -216,7 +215,6 @@ sub checkCustomSkipFilterType {
 	my ($client, $filter, $track) = @_;
 	my $trackID = $track->id;
 
-	my $currentTime = time();
 	my $parameters = $filter->{'parameter'};
 	my $result = 0;
 	my $dbh = Slim::Schema->storage->dbh();
@@ -226,10 +224,10 @@ sub checkCustomSkipFilterType {
 				my $values = $parameter->{'value'};
 				my $customtag = $values->[0] if (defined($values) && scalar(@{$values}) > 0);
 
-				my $sth = $dbh->prepare("select track from customtagimporter_track_attributes where track = $trackID and type='customtag' and attr = \"$customtag\"");
+				my $sth = $dbh->prepare("select track from customtagimporter_track_attributes where track = ? and type = 'customtag' and attr = ?");
 				$result = 1 if $filter->{'id'} eq 'customtagimporter_customtag_notcustomtag';
 				eval {
-					$sth->execute();
+					$sth->execute($trackID, $customtag);
 					if ($sth->fetch()) {
 						$result = ($filter->{'id'} eq 'customtagimporter_customtag_notcustomtag') ? 0 : 1;
 					}
@@ -260,9 +258,9 @@ sub checkCustomSkipFilterType {
 		}
 		main::DEBUGLOG && $log->is_debug && $log->debug("customtag = ".Data::Dump::dump($customtag)."\nlogop = ".Data::Dump::dump($logop)."\ncustomtagvalue = ".Data::Dump::dump($customtagvalue));
 
-		if ($customtag && $logop & $customtagvalue) {
+		if ($customtag && $logop && $customtagvalue) {
 			my $dbh = Slim::Schema->storage->dbh();
-			my $sql = "select track from customtagimporter_track_attributes where track=$trackID and type='customtag' and attr=\"$customtag\" and value ";
+			my $sql = "select track from customtagimporter_track_attributes where track = ? and type = 'customtag' and attr = ? and value ";
 
 			if ($logop eq 'lt') {
 				$sql .= "< ";
@@ -312,7 +310,7 @@ sub checkCustomSkipFilterType {
 			my $sth = $dbh->prepare($sql);
 			$result = 1 if $filter->{'id'} eq 'customtagimporter_customtag_notcustomtagvalue';
 			eval {
-				$sth->execute();
+				$sth->execute($trackID, $customtag);
 				if ($sth->fetch()) {
 					$result = ($filter->{'id'} eq 'customtagimporter_customtag_notcustomtagvalue') ? 0 : 1;
 				}
@@ -353,17 +351,20 @@ sub initMatrix {
 				main::DEBUGLOG && $log->is_debug && $log->debug('trackinfohandler ID = '.$regID);
 				Slim::Menu::TrackInfo->deregisterInfoProvider($regID);
 
-				my $possiblecontextmenupositions = [
-					"after => 'artwork'", # 0
-					"after => 'bottom'", # 1
-					"parent => 'moreinfo', isa => 'top'", # 2
-					"parent => 'moreinfo', isa => 'bottom'" # 3
-				];
-				my $thisPos = @{$possiblecontextmenupositions}[$songdetailsmenuposition];
+				my %contextmenupositions = (
+					0 => [after => 'artwork'],
+					1 => [after => 'bottom'],
+					2 => [parent => 'moreinfo', isa => 'top'],
+					3 => [parent => 'moreinfo', isa => 'bottom'],
+				);
+				if (!exists $contextmenupositions{$songdetailsmenuposition}) {
+					$log->error("Invalid songdetailsmenuposition: $songdetailsmenuposition");
+					next;
+				}
 				Slim::Menu::TrackInfo->registerInfoProvider($regID => (
-					eval($thisPos),
+					@{$contextmenupositions{$songdetailsmenuposition}},
 					func => sub {
-						return getTrackInfo(@_,$thisCustomTag);
+						return getTrackInfo(@_, $thisCustomTag);
 					}
 				));
 			}
@@ -423,7 +424,7 @@ sub getCustomTagValuesForTrack {
 	my $result = '';
 
 	if (Slim::Music::Import->stillScanning) {
-		$log->warn('Warning: not available until library scan is completed');
+		$log->warn('Not available until library scan is completed');
 		return $result;
 	}
 
@@ -438,11 +439,11 @@ sub getCustomTagValuesForTrack {
 
 	my $trackID = $track->id;
 	my $dbh = Slim::Schema->dbh;
-	my $sth = $dbh->prepare("select value from customtagimporter_track_attributes where type = 'customtag' and attr = \"$customtag\" and track = $trackID");
+	my $sth = $dbh->prepare("select value from customtagimporter_track_attributes where type = 'customtag' and attr = ? and track = ?");
 	my $value;
 
 	eval {
-		$sth->execute();
+		$sth->execute($customtag, $trackID);
 		$sth->bind_col(1, \$value);
 		while ($sth->fetch()) {
 			$result .= ', ' if $result;
@@ -461,17 +462,21 @@ sub getCustomTagValuesForTrack {
 sub getAvailableCustomTags {
 	my $dbh = Slim::Schema->dbh;
 	my %result = ();
-	my $sth = $dbh->prepare("SELECT attr from customtagimporter_track_attributes where type = 'customtag' group by attr order by attr");
-	my $attr;
-	$sth->execute();
-	$sth->bind_col(1,\$attr);
-	while ($sth->fetch()) {
-		$result{$attr} = 1;
+	my $sth = $dbh->prepare("SELECT attr FROM customtagimporter_track_attributes WHERE type = 'customtag' GROUP BY attr ORDER BY attr");
+	eval {
+		$sth->execute();
+		my $attr;
+		$sth->bind_col(1, \$attr);
+		while ($sth->fetch()) {
+			$result{$attr} = 1;
+		}
+		$sth->finish();
+	};
+	if ($@) {
+		$log->error("Database error: $DBI::errstr");
 	}
-	$sth->finish();
 	return \%result;
 }
-
 
 sub _setRefreshCBTimer {
 	main::DEBUGLOG && $log->is_debug && $log->debug('Killing existing timers for refresh to prevent multiple calls');
@@ -502,25 +507,6 @@ sub addTitleFormat {
 	main::DEBUGLOG && $log->is_debug && $log->debug("Adding to server title format list: $titleformat");
 	push @{$titleFormats}, $titleformat;
 	$serverPrefs->set('titleFormat', $titleFormats);
-}
-
-sub quoteValue {
-	my $value = shift;
-	$value =~ s/\'/\'\'/g;
-	return $value;
-}
-
-sub trim_leadtail {
-	my ($str) = @_;
-	$str =~ s{^\s+}{};
-	$str =~ s{\s+$}{};
-	return $str;
-}
-
-sub trim_all {
-	my ($str) = @_;
-	$str =~ s/ //g;
-	return $str;
 }
 
 1;

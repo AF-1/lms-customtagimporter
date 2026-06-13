@@ -233,7 +233,7 @@ sub checkCustomSkipFilterType {
 					}
 				};
 				if ($@) {
-					$log->error("Error executing SQL: $@\n$DBI::errstr");
+					$log->error("Error executing SQL: $@");
 				}
 				$sth->finish();
 				last;
@@ -317,7 +317,7 @@ sub checkCustomSkipFilterType {
 			};
 			if ($@) {
 				$result = 0;
-				$log->error("Error executing SQL: $@\n$DBI::errstr");
+				$log->error("Error executing SQL: $@");
 			}
 			$sth->finish();
 			main::DEBUGLOG && $log->is_debug && $log->debug('Should '.($result ? '' : 'not ').'be skipped.');
@@ -453,7 +453,7 @@ sub getCustomTagValuesForTrack {
 		$sth->finish();
 	};
 	if ($@) {
-		$log->error("Database error: $DBI::errstr");
+		$log->error("Database error: $@");
 	}
 	main::DEBUGLOG && $log->is_debug && $log->debug("CTI values for customtag \"$customtag\" = $result");
 	return $result;
@@ -473,7 +473,7 @@ sub getAvailableCustomTags {
 		$sth->finish();
 	};
 	if ($@) {
-		$log->error("Database error: $DBI::errstr");
+		$log->error("Database error: $@");
 	}
 	return \%result;
 }

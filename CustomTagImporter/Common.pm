@@ -170,7 +170,7 @@ sub initDatabase {
 		}
 	};
 	if ($@) {
-		$log->error("Database error: $DBI::errstr");
+		$log->error("Database error: $@");
 	}
 	$sth->finish();
 	main::DEBUGLOG && $log->is_debug && $log->debug($tableExists ? 'CTI table found.' : 'No CTI table found.');
@@ -382,7 +382,7 @@ sub getScanTrackAttributes {
 					$sth->execute();
 				};
 				if ($@) {
-					$log->error("Database error: $DBI::errstr");
+					$log->error("Database error: $@");
 					$errors++;
 				}
 				$sth->finish();
@@ -473,7 +473,7 @@ sub clearDBtable {
 		main::idleStreams();
 	};
 	if ($@) {
-		$log->error("Database error: $DBI::errstr");
+		$log->error("Database error: $@");
 		$errors++;
 	} else {
 		main::DEBUGLOG && $log->is_debug && $log->debug('Deleted old database table. Took '.(time()-$startTime).' seconds');
@@ -1015,7 +1015,7 @@ sub rateScannedTracks {
 		$unrate_sth->execute();
 	};
 	if ($@) {
-		$log->error("Database error: $DBI::errstr");
+		$log->error("Database error: $@");
 	}
 	$unrate_sth->finish();
 	main::DEBUGLOG && $log->is_debug && $log->debug('Pt 2: Unrating tracks in LMS db took '.(time() - $started).' seconds.');
@@ -1037,7 +1037,7 @@ sub rateScannedTracks {
 			$rate_sth->execute();
 		};
 		if ($@) {
-			$log->error("Database error: $DBI::errstr");
+			$log->error("Database error: $@");
 		}
 	}
 	$rate_sth->finish();

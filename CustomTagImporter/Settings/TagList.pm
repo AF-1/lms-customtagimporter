@@ -25,11 +25,8 @@ use Slim::Utils::Strings qw(string cstring);
 my $prefs = preferences('plugin.customtagimporter');
 my $log = logger('plugin.customtagimporter');
 
-my $plugin;
-
 sub new {
-	my $class = shift;
-	$plugin = shift;
+	my ($class, $plugin) = @_;
 	$class->SUPER::new($plugin);
 }
 

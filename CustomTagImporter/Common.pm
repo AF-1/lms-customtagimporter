@@ -986,6 +986,7 @@ sub rateScannedTracks {
 	my $started = my $totalTimeStarted = time();
 	my $RLenabled = Slim::Utils::PluginManager->isEnabled('Plugins::RatingsLight::Plugin');
 	my $dbh = Slim::Schema->dbh;
+	my $ratingHistoryColumnsExist = _ratingHistoryColumnsExist($dbh);
 
 	### get rated CTI tracks (and their rating values)
 	my $sqlGetRatedCTItracks = "select customtagimporter_track_attributes.urlmd5, customtagimporter_track_attributes.value from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0";
@@ -1008,11 +1009,13 @@ sub rateScannedTracks {
 	}
 
 	### unrate tracks in LMS db
-
 	$started = time();
-	my $unrate_sth = $dbh->prepare("UPDATE tracks_persistent SET rating = NULL WHERE tracks_persistent.rating > 0");
+	my $unrateRatingTime = int(time());
+my $unrate_sth = $ratingHistoryColumnsExist
+		? $dbh->prepare("UPDATE tracks_persistent SET rating = 0, lastRated = ?, prevRating = tracks_persistent.rating WHERE tracks_persistent.rating > 0 AND tracks_persistent.urlmd5 NOT IN (select customtagimporter_track_attributes.urlmd5 from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0)")
+		: $dbh->prepare("UPDATE tracks_persistent SET rating = 0 WHERE tracks_persistent.rating > 0 AND tracks_persistent.urlmd5 NOT IN (select customtagimporter_track_attributes.urlmd5 from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0)");
 	eval {
-		$unrate_sth->execute();
+		$ratingHistoryColumnsExist ? $unrate_sth->execute($unrateRatingTime) : $unrate_sth->execute();
 	};
 	if ($@) {
 		$log->error("Database error: $@");
@@ -1021,10 +1024,12 @@ sub rateScannedTracks {
 	main::DEBUGLOG && $log->is_debug && $log->debug('Pt 2: Unrating tracks in LMS db took '.(time() - $started).' seconds.');
 
 	## write ratings for rated CTI tracks to LMS tracks_persistent
-
 	$started = time();
 
-	my $sqlrate = "update tracks_persistent set rating = ? where tracks_persistent.urlmd5 = ?;";
+	my $rateRatingTime = int(time());
+	my $sqlrate = $ratingHistoryColumnsExist
+		? "update tracks_persistent set rating = ?, lastRated = ?, prevRating = tracks_persistent.rating where tracks_persistent.urlmd5 = ?;"
+		: "update tracks_persistent set rating = ? where tracks_persistent.urlmd5 = ?;";
 	my $rate_sth = $dbh->prepare($sqlrate);
 
 	while (my ($ratedTrackurlmd5, $rating100ScaleValue) = each (%ratedCTItracks)) {
@@ -1032,8 +1037,14 @@ sub rateScannedTracks {
 		$rating100ScaleValue = 100 if $rating100ScaleValue > 100;
 
 		eval {
-			$rate_sth->bind_param(1, $rating100ScaleValue);
-			$rate_sth->bind_param(2, $ratedTrackurlmd5);
+			if ($ratingHistoryColumnsExist) {
+				$rate_sth->bind_param(1, $rating100ScaleValue);
+				$rate_sth->bind_param(2, $rateRatingTime);
+				$rate_sth->bind_param(3, $ratedTrackurlmd5);
+			} else {
+				$rate_sth->bind_param(1, $rating100ScaleValue);
+				$rate_sth->bind_param(2, $ratedTrackurlmd5);
+			}
 			$rate_sth->execute();
 		};
 		if ($@) {
@@ -1055,6 +1066,26 @@ sub rateScannedTracks {
 sub resetRatingsToCTIvalues {
 	my $scanningContext = {'isReset' => 1};
 	rateScannedTracks($scanningContext);
+}
+
+sub _ratingHistoryColumnsExist {
+	my $dbh = shift;
+	my %colNames = ();
+	eval {
+		my $colSth = $dbh->prepare(q{pragma table_info(tracks_persistent)});
+		$colSth->execute();
+		my $colName;
+		$colSth->bind_col(2, \$colName);
+		while ($colSth->fetch()) {
+			$colNames{$colName} = 1 if $colName;
+		}
+		$colSth->finish();
+	};
+	if ($@) {
+		$log->error("Database error reading table info: $@");
+		return 0;
+	}
+	return ($colNames{'lastRated'} && $colNames{'prevRating'}) ? 1 : 0;
 }
 
 sub createTagHash {

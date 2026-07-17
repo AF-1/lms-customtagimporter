@@ -25,7 +25,6 @@ use Plugins::CustomTagImporter::Common ':all';
 
 my $prefs = preferences('plugin.customtagimporter');
 my $log = logger('plugin.customtagimporter');
-my $plugin;
 
 sub new {
 	my ($class, $plugin) = @_;
@@ -95,8 +94,7 @@ sub handler {
 
 sub beforeRender {
 	my ($class, $paramRef) = @_;
-	my $host = $paramRef->{host} || (Slim::Utils::Network::serverAddr() . ':' . preferences('server')->get('httpport'));
-	$paramRef->{'squeezebox_server_jsondatareq'} = 'http://' . $host . '/jsonrpc.js';
+	$paramRef->{'squeezebox_server_jsondatareq'} = '/jsonrpc.js';
 
 	# count tracks with rating tags and values > 0
 	my $ratedCTItrackCountSQL = "select count(*) from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0";

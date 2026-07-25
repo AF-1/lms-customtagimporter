@@ -44,12 +44,7 @@ sub currentPage {
 }
 
 sub pages {
-	my %page = (
-		'name' => Slim::Utils::Strings::string('PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS'),
-		'page' => page(),
-	);
-	my @pages = (\%page);
-	return \@pages;
+	return [{ 'name' => Slim::Utils::Strings::string('PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS'), 'page' => page() }];
 }
 
 sub prefs {

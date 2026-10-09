@@ -1,10 +1,6 @@
 #
 # Custom Tag Importer
-#
 # (c) 2021 AF
-#
-# Portions of code derived from the CustomScan plugin by (c) 2006 Erland Isaksson
-#
 # Licensed under the GPLv3 - see LICENSE file
 #
 

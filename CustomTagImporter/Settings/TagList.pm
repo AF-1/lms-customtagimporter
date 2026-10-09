@@ -1,10 +1,6 @@
 #
 # Custom Tag Importer
-#
 # (c) 2021 AF
-#
-# Portions of code derived from the CustomScan plugin by (c) 2006 Erland Isaksson
-#
 # Licensed under the GPLv3 - see LICENSE file
 #
 
@@ -58,58 +54,49 @@ sub handler {
 sub beforeRender {
 	my ($class, $paramRef) = @_;
 	my $dbh = Slim::Schema->storage->dbh();
-	my $customTagSql = "select attr,value,count(distinct id) from customtagimporter_track_attributes where type='customtag' group by value";
-	my %attrValHash = ();
+	my %attrValues = ();
+	my %attrTrackCount = ();
 
 	eval {
-		my $sth = $dbh->prepare($customTagSql);
-		main::DEBUGLOG && $log->is_debug && $log->debug("Executing: $customTagSql");
-		$sth->execute() or do {
-			$log->error("Error executing: $customTagSql");
-			$customTagSql = undef;
-		};
-
-		my $attr;
-		my $value;
-		my $valCount;
-		$sth->bind_col(1, \$attr);
-		$sth->bind_col(2, \$value);
-		$sth->bind_col(3, \$valCount);
+		my ($attr, $value, $count);
+		my $sth = $dbh->prepare("SELECT attr, value, count(DISTINCT id) FROM customtagimporter_track_attributes WHERE type = 'customtag' GROUP BY attr, value");
+		$sth->execute();
+		$sth->bind_columns(\$attr, \$value, \$count);
 		while ($sth->fetch()) {
-			$attrValHash{$attr}{$value} = $valCount;
+			# SQLite returns raw bytes, so decode them for correct display
+			push @{$attrValues{Slim::Utils::Unicode::utf8decode($attr, 'utf8')}}, {
+				'value' => Slim::Utils::Unicode::utf8decode($value // '', 'utf8'),
+				'count' => $count,
+			};
+		}
+		$sth->finish();
+
+		$sth = $dbh->prepare("SELECT attr, count(DISTINCT track) FROM customtagimporter_track_attributes WHERE type = 'customtag' GROUP BY attr");
+		$sth->execute();
+		$sth->bind_columns(\$attr, \$count);
+		while ($sth->fetch()) {
+			$attrTrackCount{Slim::Utils::Unicode::utf8decode($attr, 'utf8')} = $count;
 		}
 		$sth->finish();
 	};
 	if ($@) {
-		$log->error("Running: $customTagSql got error:\n$@");
+		$log->error("Error getting custom tag values:\n$@");
 	}
 
-	my %attrTotalCount = ();
-	if (scalar keys %attrValHash > 0) {
-		foreach my $thisAttr (keys %attrValHash) {
-			my $count = 0;
-
-			eval {
-				my $attrCountSth = $dbh->prepare("SELECT count(distinct track) FROM customtagimporter_track_attributes WHERE type = 'customtag' AND attr = ?");
-				$attrCountSth->execute($thisAttr);
-				$count = $attrCountSth->fetchrow || 0;
-				$attrCountSth->finish();
-			};
-			if ($@) {
-				$log->error("Error getting track count for attr '$thisAttr': $@");
-			}
-			main::DEBUGLOG && $log->is_debug && $log->debug("count for $thisAttr = " . $count);
-			$attrTotalCount{$thisAttr} = $count;
-		}
+	# Pass a plain sorted list to the template to avoid hash lookups with non-ASCII keys there
+	my @tagList = ();
+	foreach my $thisAttr (sort { lc($a) cmp lc($b) } keys %attrValues) {
+		push @tagList, {
+			'name' => $thisAttr,
+			'trackCount' => $attrTrackCount{$thisAttr} || 0,
+			'valuelist' => [sort { lc($a->{'value'}) cmp lc($b->{'value'}) } @{$attrValues{$thisAttr}}],
+		};
 	}
 
-	main::DEBUGLOG && $log->is_debug && $log->debug('attrValHash = '.Data::Dump::dump(\%attrValHash));
-	main::DEBUGLOG && $log->is_debug && $log->debug('attrTotalCount = '.Data::Dump::dump(\%attrTotalCount));
-	main::DEBUGLOG && $log->is_debug && $log->debug('customtagcount = '.scalar keys %attrValHash);
+	main::DEBUGLOG && $log->is_debug && $log->debug('tagList = '.Data::Dump::dump(\@tagList));
 
-	$paramRef->{'attrvaluelist'} = \%attrValHash;
-	$paramRef->{'attrTotalCount'} = \%attrTotalCount;
-	$paramRef->{'customtagcount'} = scalar keys %attrValHash;
+	$paramRef->{'taglist'} = \@tagList;
+	$paramRef->{'customtagcount'} = scalar @tagList;
 }
 
 1;

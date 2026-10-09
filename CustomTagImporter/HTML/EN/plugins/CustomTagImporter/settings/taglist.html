@@ -3,18 +3,18 @@
 [% PROCESS settings/header.html %]
 
 [% PROCESS plugins/CustomTagImporter/settings/subpage_chooser.html %]
-
+<br><br>
 <span class="padleft header">[% "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_HEADING" | string %]</span><br><br>
 <span class="padleft">[% "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_INFO" | string %]</span>
 <br><br>
 [% IF customtagcount %]
-	[% FOREACH attr = attrvaluelist.keys.sort %]
-		[%- settingstitle = attr _ "<br>(" _ attrvaluelist.$attr.keys.size; IF attrvaluelist.$attr.keys.size == 1; settingstitle = settingstitle _ " value, "; ELSE; settingstitle = settingstitle _ " values, "; END; settingstitle = settingstitle _ attrTotalCount.$attr; IF attrvaluelist.$attr.keys.size == 1; settingstitle = settingstitle _ " track)"; ELSE; settingstitle = settingstitle _ " tracks)"; END; %]
+	[% strValue = "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_VALUE" | string; strValues = "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_VALUES" | string; strTrack = "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_TRACK" | string; strTracks = "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_TRACKS" | string %]
+	[% FOREACH tag = taglist %]
+		[%- settingstitle = tag.name _ "<br>(" _ tag.valuelist.size _ " " _ (tag.valuelist.size == 1 ? strValue : strValues) _ ", " _ tag.trackCount _ " " _ (tag.trackCount == 1 ? strTrack : strTracks) _ ")" %]
 		[% WRAPPER setting title=settingstitle desc="" %]
 			<select name="" multiple size="10">
-			[%- valuelistforthisattr = attrvaluelist.$attr %]
-			[%- FOREACH attrvalue = attrvaluelist.$attr.keys.sort %]
-			<option value="" disabled>[% FILTER truncate(110, '&hellip;') %][% attrvalue %][% END %]&nbsp;&nbsp;&nbsp;([% valuelistforthisattr.$attrvalue %][% IF valuelistforthisattr.$attrvalue == 1 %] track[% ELSE %] tracks[% END %])&nbsp;</option>
+			[%- FOREACH entry = tag.valuelist %]
+			<option value="" disabled>[% FILTER truncate(110, '&hellip;') %][% entry.value %][% END %]&nbsp;&nbsp;&nbsp;([% entry.count %] [% entry.count == 1 ? strTrack : strTracks %])&nbsp;</option>
 			[%- END %]
 			</select>
 			<br><br>

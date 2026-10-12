@@ -12,14 +12,6 @@ use utf8;
 
 use base qw(Slim::Web::Settings);
 
-use Slim::Utils::Log;
-use Slim::Utils::Prefs;
-use Slim::Utils::Misc;
-use Slim::Utils::Strings qw(string);
-
-my $prefs = preferences('plugin.customtagimporter');
-my $log = logger('plugin.customtagimporter');
-
 my %subPages = ();
 
 sub new {

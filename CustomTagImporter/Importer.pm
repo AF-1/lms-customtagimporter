@@ -16,7 +16,6 @@ use Slim::Schema;
 use Plugins::CustomTagImporter::Common ':all';
 
 my $prefs = preferences('plugin.customtagimporter');
-my $serverPrefs = preferences('server');
 my $log = Slim::Utils::Log::logger('plugin.customtagimporter');
 
 sub initPlugin {
@@ -41,9 +40,13 @@ sub toggleUseImporter {
 sub startScan {
 	my $class = shift;
 	main::DEBUGLOG && $log->is_debug && $log->debug('Starting importer');
-	if ($prefs->get('autorescan')) {
+
+	# LMS passes a single folder to the scanner as its last argument if only that folder is rescanned
+	if (main::SCANNER && defined $ARGV[-1] && $ARGV[-1] ne 'onlinelibrary' && -d $ARGV[-1]) {
+		main::INFOLOG && $log->is_info && $log->info('LMS rescans a single folder only, skipping CTI auto rescan');
+	} elsif ($prefs->get('autorescan')) {
 		main::DEBUGLOG && $log->is_debug && $log->debug('Starting CTI auto rescan');
-		$class->rescan(1);
+		rescan(1);
 	}
 	Slim::Music::Import->endImporter($class);
 }

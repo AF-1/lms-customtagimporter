@@ -10,16 +10,12 @@ use strict;
 use warnings;
 use utf8;
 
-use Slim::Player::Client;
-use File::Spec::Functions qw(:ALL);
-use Slim::Utils::Prefs;
+use File::Spec::Functions qw(catdir catfile);
 use Slim::Utils::Misc;
 use File::Slurp;
 use XML::Simple;
-use FindBin qw($Bin);
 use Cache::Cache qw($EXPIRES_NEVER);
 
-my $serverPrefs = preferences('server');
 my $log = Slim::Utils::Log::logger('plugin.customtagimporter');
 
 sub getTemplates {
@@ -35,15 +31,9 @@ sub getTemplates {
 
 	my @result = ();
 	my @pluginDirs = Slim::Utils::OSDetect::dirsFor('Plugins');
-	if (!defined($templateType)) {
-		$templateType = 'template';
-	}
-	if (!defined($contentType)) {
-		$contentType = $templateType;
-	}
-	if (!defined($resultType)) {
-		$resultType = $templateType;
-	}
+	$templateType //= 'template';
+	$contentType //= $templateType;
+	$resultType //= $templateType;
 
 	my $cacheItems;
 	if (defined($cache)) {
@@ -86,7 +76,6 @@ sub getTemplates {
 						'data' => \%templateItem,
 						'timestamp' => $timestamp,
 					);
-					delete $cacheItems->{'items'}->{$item};
 					$cacheItems->{'items'}->{$item} = \%entry;
 				}
 				push @result,\%templateItem;
@@ -156,10 +145,6 @@ sub parseTemplateContent {
 				$template = $xml->{$templateType};
 			}
 		}
-
-		# Release content
-		undef $content;
-
 	} else {
 		$log->error("Unable to read $templateType configuration for $id" . ($@ ? ": $@" : ''));
 	}

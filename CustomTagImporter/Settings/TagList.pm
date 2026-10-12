@@ -14,9 +14,6 @@ use base qw(Plugins::CustomTagImporter::Settings::BaseSettings);
 
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
-use Slim::Utils::Misc;
-use Slim::Utils::Strings;
-use Slim::Utils::Strings qw(string cstring);
 
 my $prefs = preferences('plugin.customtagimporter');
 my $log = logger('plugin.customtagimporter');
@@ -44,11 +41,6 @@ sub pages {
 
 sub prefs {
 	return ($prefs);
-}
-
-sub handler {
-	my ($class, $client, $paramRef) = @_;
-	return $class->SUPER::handler($client, $paramRef);
 }
 
 sub beforeRender {

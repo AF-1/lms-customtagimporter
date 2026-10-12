@@ -10,11 +10,11 @@
 [% IF customtagcount %]
 	[% strValue = "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_VALUE" | string; strValues = "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_VALUES" | string; strTrack = "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_TRACK" | string; strTracks = "PLUGIN_CUSTOMTAGIMPORTER_TAGLIST_TRACKS" | string %]
 	[% FOREACH tag = taglist %]
-		[%- settingstitle = tag.name _ "<br>(" _ tag.valuelist.size _ " " _ (tag.valuelist.size == 1 ? strValue : strValues) _ ", " _ tag.trackCount _ " " _ (tag.trackCount == 1 ? strTrack : strTracks) _ ")" %]
+		[%- tagname = tag.name | html; settingstitle = tagname _ "<br>(" _ tag.valuelist.size _ " " _ (tag.valuelist.size == 1 ? strValue : strValues) _ ", " _ tag.trackCount _ " " _ (tag.trackCount == 1 ? strTrack : strTracks) _ ")" %]
 		[% WRAPPER setting title=settingstitle desc="" %]
 			<select name="" multiple size="10">
 			[%- FOREACH entry = tag.valuelist %]
-			<option value="" disabled>[% FILTER truncate(110, '&hellip;') %][% entry.value %][% END %]&nbsp;&nbsp;&nbsp;([% entry.count %] [% entry.count == 1 ? strTrack : strTracks %])&nbsp;</option>
+				<option value="" disabled>[% entry.value | truncate(110, '…') | html %]&nbsp;&nbsp;&nbsp;([% entry.count %] [% entry.count == 1 ? strTrack : strTracks %])&nbsp;</option>
 			[%- END %]
 			</select>
 			<br><br>

@@ -1,0 +1,64 @@
+[% pagetitle = 'PLUGIN_CUSTOMTAGIMPORTER_RESCANFOLDER' | string %]
+[% pwd_list = [ pagetitle ] %]
+[% PROCESS pageheader.html %]
+<style>
+@charset "UTF-8";
+.wrapper {padding: 5px;}
+.ctiok {color: green;}
+.ctierr {color: red;}
+</style>
+<br>
+[% messagekey = started ? 'PLUGIN_CUSTOMTAGIMPORTER_RESCANFOLDER_INPROGRESS' : 'PLUGIN_CUSTOMTAGIMPORTER_RESCANFOLDER_NOTSTARTED' %]
+[% landingurl = webroot _ 'clixmlbrowser/clicmd=browselibrary+items&mode=bmf&linktitle=BROWSE_MUSIC_FOLDER' _ (parentfolderid ? '&folder_id=' _ parentfolderid : '') _ '/?player=' _ playerURI %]
+<div class="wrapper">
+	<p id="statusmsg" data-done="[% 'PLUGIN_CUSTOMTAGIMPORTER_RESCANFOLDER_DONE' | string | html %]" data-aborted="[% 'PLUGIN_CUSTOMTAGIMPORTER_RESCANFOLDER_ABORTED' | string | html %]" data-errors="[% 'PLUGIN_CUSTOMTAGIMPORTER_RESCANFOLDER_ERRORS' | string | html %]">[% messagekey | string %]</p>
+	<br><br>
+	<p><a href="[% landingurl | html %]">[% 'PLUGIN_CUSTOMTAGIMPORTER_RESCANFOLDER_BACK' | string %]</a></p>
+</div>
+[% IF started %]
+<script type="text/javascript">
+	(function () {
+		const landingUrl = "[% landingurl %]";
+		const serverjsonurl = "[% webroot %]jsonrpc.js";
+		const statusmsg = document.getElementById('statusmsg');
+
+		async function getPref(prefName) {
+			const response = await fetch(serverjsonurl, {
+				method: 'post',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ id: 1, method: 'slim.request', params: ['', ['pref', 'plugin.customtagimporter:' + prefName, '?']] })
+			});
+			if (!response.ok) {
+				throw new Error('HTTP error! status: ' + response.status);
+			}
+			return Object.values((await response.json()).result)[0];
+		}
+
+		async function checkStatus() {
+			try {
+				if (Number(await getPref('scanningInProgress')) === 1) {
+					setTimeout(checkStatus, 1000);
+					return;
+				}
+				const scanResult = Number(await getPref('scanResult'));
+				if (scanResult === 1) {
+					statusmsg.textContent = statusmsg.dataset.done;
+					statusmsg.className = 'ctiok';
+					setTimeout(function () { location.href = landingUrl; }, 3000);
+				} else if (scanResult === 2) {
+					statusmsg.textContent = statusmsg.dataset.aborted;
+					statusmsg.className = 'ctierr';
+				} else {
+					statusmsg.textContent = statusmsg.dataset.errors;
+					statusmsg.className = 'ctierr';
+				}
+			} catch (error) {
+				console.log(error);
+			}
+		}
+
+		setTimeout(checkStatus, 1000);
+	})();
+</script>
+[% END %]
+[% PROCESS pagefooter.html %]

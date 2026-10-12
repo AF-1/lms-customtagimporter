@@ -951,7 +951,7 @@
 											<id>bytitle</id>
 											<name>Sort by title</name>
 											<menulinks>alpha</menulinks>
-											<keyword name="orderby" value="[% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]racks.titlesort[% END %] asc"/>
+											<keyword name="orderby" value="[% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %] asc"/>
 										</option>
 										<menudata>
 											select tracks.id,[% IF customtracktag %]ifnull(tracktag.value,tracks.title)[% ELSE %]tracks.title[% END %],substr([% IF customtracktag %]ifnull(tracktag.value,tracks.titlesort)[% ELSE %]tracks.titlesort[% END %],1,1) from tracks

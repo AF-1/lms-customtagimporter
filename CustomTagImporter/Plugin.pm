@@ -13,13 +13,11 @@ use utf8;
 use base qw(Slim::Plugin::Base);
 
 use Slim::Utils::Prefs;
-use Slim::Buttons::Home;
 use Slim::Utils::Misc;
-use Slim::Utils::Strings qw(string);
+use Slim::Utils::Strings qw(cstring);
 use Slim::Utils::Log;
-use File::Spec::Functions qw(:ALL);
-use Scalar::Util qw(blessed looks_like_number);
-use HTML::Entities;
+use File::Basename qw(dirname);
+use Scalar::Util qw(blessed);
 
 use Plugins::CustomTagImporter::Common ':all';
 use Plugins::CustomTagImporter::Importer;
@@ -41,6 +39,11 @@ sub initPlugin {
 	initPrefs();
 	Slim::Control::Request::subscribe(\&_setRefreshCBTimer, [['rescan'], ['done']]);
 	Slim::Control::Request::addDispatch(['customtagimporter', 'changedstatus','_status'],[0, 0, 0, undef]);
+	Slim::Control::Request::addDispatch(['customtagimporter', 'rescanfolder', '_folderId'], [0, 0, 0, \&_cliRescanFolder]);
+	Slim::Menu::FolderInfo->registerInfoProvider(customtagimporter_rescanfolder => (
+		after => 'bottom',
+		func => \&_folderRescanMenu,
+	));
 
 	if (main::WEBUI) {
 		require Plugins::CustomTagImporter::Settings::Basic;
@@ -49,6 +52,7 @@ sub initPlugin {
 		Plugins::CustomTagImporter::Settings::Basic->new($class);
 		Plugins::CustomTagImporter::Settings::TagList->new($class);
 		Plugins::CustomTagImporter::Settings::DisplayedTagInfo->new($class);
+		Slim::Web::Pages->addPageFunction('plugins/CustomTagImporter/rescanfolder', \&_rescanFolderWeb);
 	}
 }
 
@@ -77,6 +81,97 @@ sub initPrefs {
 		}, 'customtagconfigmatrix');
 }
 
+sub _folderRescanMenu {
+	my ($client, $tags) = @_;
+
+	return unless $tags->{'folder_id'} && $tags->{'folder_id'} > 0;
+	return unless $prefs->get('customtags') || $prefs->get('ratingtags');
+
+	if ($tags->{'menuMode'}) {
+		return {
+			name => cstring($client, 'PLUGIN_CUSTOMTAGIMPORTER_RESCANFOLDER'),
+			type => 'link',
+			passthrough => [$tags->{'folder_id'}],
+			url => \&_folderRescanCallback,
+			jive => {
+				actions => {
+					go => {
+						player => 0,
+						cmd => ['customtagimporter', 'rescanfolder', $tags->{'folder_id'}],
+						nextWindow => 'parent',
+					},
+				},
+			},
+			favourites => 0,
+		};
+	}
+
+	return {
+		type => 'text',
+		name => cstring($client, 'PLUGIN_CUSTOMTAGIMPORTER_RESCANFOLDER'),
+		folderid => $tags->{'folder_id'},
+		web => {
+			type => 'htmltemplate',
+			value => 'plugins/CustomTagImporter/html/rescanfolderlink.html',
+		},
+	};
+}
+
+sub _folderRescanCallback {
+	my ($client, $callback, undef, $folderId) = @_;
+
+	# the web UI templates call code refs without arguments when they access the item's url, so ignore such calls
+	return unless $folderId;
+
+	$callback->({
+		type => 'text',
+		name => cstring($client, _startFolderRescan($folderId) ? 'PLUGIN_CUSTOMTAGIMPORTER_RESCANFOLDER_STARTED' : 'PLUGIN_CUSTOMTAGIMPORTER_RESCANFOLDER_NOTSTARTED'),
+		showBriefly => 1,
+		nextWindow => 'parent',
+	});
+}
+
+sub _cliRescanFolder {
+	my $request = shift;
+
+	if (_startFolderRescan($request->getParam('_folderId'))) {
+		$request->setStatusDone();
+	} else {
+		$request->setStatusBadParams();
+	}
+}
+
+sub _startFolderRescan {
+	my $folderId = shift;
+
+	return 0 unless defined $folderId && $folderId =~ /^[1-9]\d*$/;
+
+	my $folder = Slim::Schema->find('Track', $folderId);
+	return 0 unless blessed($folder) && $folder->content_type eq 'dir' && !isScanning() && !Slim::Music::Import->stillScanning;
+
+	my $folderUrl = $folder->url;
+	$folderUrl .= '/' unless $folderUrl =~ m{/$};
+	rescan(0, $folderUrl);
+	return 1;
+}
+
+sub _rescanFolderWeb {
+	my ($client, $params, $callback, $httpClient, $response) = @_;
+
+	my $folderId = $params->{'folderid'};
+	$params->{'started'} = _startFolderRescan($folderId);
+
+	# landing page: the folder list one level above the rescanned folder
+	my $folder = ($folderId && $folderId =~ /^[1-9]\d*$/) ? Slim::Schema->find('Track', $folderId) : undef;
+	if (blessed($folder)) {
+		my $parent = Slim::Schema->objectForUrl({url => Slim::Utils::Misc::fileURLFromPath(dirname(Slim::Utils::Misc::pathFromFileURL($folder->url)))});
+		$params->{'parentfolderid'} = $parent->id if blessed($parent) && $parent->content_type eq 'dir';
+	}
+
+	return Slim::Web::HTTP::filltemplatefile('plugins/CustomTagImporter/html/rescanfolder.html', $params);
+}
+
+
 sub getCustomBrowseMenusTemplates {
 	return getCustomBrowseTemplates(@_);
 }
@@ -93,8 +188,7 @@ sub getCustomBrowseMenusTemplateData {
 
 sub getCustomBrowseTemplateData {
 	my ($client, $templateItem, $parameterValues) = @_;
-	my $data = Plugins::CustomTagImporter::CBTemplateReader::readTemplateData('CustomTagImporter', 'CBMenuTemplates', $templateItem->{'id'});
-	return $data;
+	return Plugins::CustomTagImporter::CBTemplateReader::readTemplateData('CustomTagImporter', 'CBMenuTemplates', $templateItem->{'id'});
 }
 
 sub getCustomBrowseMenusContextTemplates {
@@ -113,8 +207,7 @@ sub getCustomBrowseMenusContextTemplateData {
 
 sub getCustomBrowseContextTemplateData {
 	my ($client, $templateItem, $parameterValues) = @_;
-	my $data = Plugins::CustomTagImporter::CBTemplateReader::readTemplateData('CustomTagImporter', 'CBContextMenuTemplates', $templateItem->{'id'});
-	return $data;
+	return Plugins::CustomTagImporter::CBTemplateReader::readTemplateData('CustomTagImporter', 'CBContextMenuTemplates', $templateItem->{'id'});
 }
 
 
@@ -222,7 +315,7 @@ sub checkCustomSkipFilterType {
 		for my $parameter (@{$parameters}) {
 			if ($parameter->{'id'} eq 'customtag') {
 				my $values = $parameter->{'value'};
-				my $customtag = $values->[0] if (defined($values) && scalar(@{$values}) > 0);
+				my $customtag = (defined($values) && scalar(@{$values}) > 0) ? $values->[0] : undef;
 
 				my $sth = $dbh->prepare("select track from customtagimporter_track_attributes where track = ? and type = 'customtag' and attr = ?");
 				$result = 1 if $filter->{'id'} eq 'customtagimporter_customtag_notcustomtag';
@@ -258,59 +351,36 @@ sub checkCustomSkipFilterType {
 		}
 		main::DEBUGLOG && $log->is_debug && $log->debug("customtag = ".Data::Dump::dump($customtag)."\nlogop = ".Data::Dump::dump($logop)."\ncustomtagvalue = ".Data::Dump::dump($customtagvalue));
 
-		if ($customtag && $logop && $customtagvalue) {
-			my $dbh = Slim::Schema->storage->dbh();
+		if ($customtag && $logop && defined($customtagvalue) && $customtagvalue ne '') {
+			# values are bound as parameters, only operators and placeholders are added to the statement
 			my $sql = "select track from customtagimporter_track_attributes where track = ? and type = 'customtag' and attr = ? and value ";
+			my @values = ($customtagvalue);
 
 			if ($logop eq 'lt') {
-				$sql .= "< ";
+				$sql .= "< ?";
 			} elsif ($logop eq 'le') {
-				$sql .= "<= ";
+				$sql .= "<= ?";
 			} elsif ($logop eq 'ge') {
-				$sql .= ">= ";
+				$sql .= ">= ?";
 			} elsif ($logop eq 'gt') {
-				$sql .= "> ";
+				$sql .= "> ?";
 			} elsif ($logop eq 'eq') {
-				$sql .= "= ";
-				$customtagvalue = quoteValue($customtagvalue);
+				$sql .= "= ?";
 			} elsif ($logop eq 'contains') {
-				$sql .= "like ";
-				$customtagvalue = quoteValue($customtagvalue);
+				$sql .= "like ?";
+				@values = ('%'.$customtagvalue.'%');
 			} elsif ($logop eq 'oneof') {
-				$sql .= "in (";
-				my @paramvalues = split(/;/, $customtagvalue);
-				my $quotedTextVal;
-
-				foreach (@paramvalues) {
-					my $thisParamVal = quoteValue($_);
-					main::DEBUGLOG && $log->is_debug && $log->debug("thisParamVal = ".Data::Dump::dump($thisParamVal));
-
-					if (looks_like_number($thisParamVal)) {
-						$quotedTextVal .= ($quotedTextVal ? ',' : '').encode_entities(trim_leadtail($thisParamVal), "&<>\'\"");
-					} else {
-						$quotedTextVal .= ($quotedTextVal ? ',' : '')."'".encode_entities(trim_leadtail($thisParamVal), "&<>\'\"")."'";
-					}
-				}
-				$customtagvalue = $quotedTextVal;
-			}
-			$sql .= "\"" unless $logop eq 'oneof';
-			if ($logop eq 'contains') {
-				$sql .= "%%";
-			}
-			$sql .= "$customtagvalue";
-			if ($logop eq 'contains') {
-				$sql .= "%%";
-			}
-			$sql .= "\"" unless $logop eq 'oneof';
-			if ($logop eq 'oneof') {
-				$sql .= ")";
+				@values = map { trim_leadtail($_) } split(/;/, $customtagvalue);
+				$sql .= "in (".join(',', ('?') x scalar(@values)).")";
+			} else {
+				return $result;
 			}
 
 			main::DEBUGLOG && $log->is_debug && $log->debug("sql = ".$sql);
 			my $sth = $dbh->prepare($sql);
 			$result = 1 if $filter->{'id'} eq 'customtagimporter_customtag_notcustomtagvalue';
 			eval {
-				$sth->execute($trackID, $customtag);
+				$sth->execute($trackID, $customtag, @values);
 				if ($sth->fetch()) {
 					$result = ($filter->{'id'} eq 'customtagimporter_customtag_notcustomtagvalue') ? 0 : 1;
 				}
@@ -332,7 +402,7 @@ sub initMatrix {
 	main::DEBUGLOG && $log->is_debug && $log->debug('Start initializing trackinfohandler & titleformats.');
 	my $configmatrix = $prefs->get('customtagconfigmatrix');
 
-	my $availableCustomTags = Plugins::CustomTagImporter::Plugin::getAvailableCustomTags();
+	my $availableCustomTags = getAvailableCustomTags();
 	main::DEBUGLOG && $log->is_debug && $log->debug('available custom tags = '.Data::Dump::dump($availableCustomTags));
 
 	if (keys %{$availableCustomTags} > 0 && keys %{$configmatrix} > 0) {
@@ -340,17 +410,14 @@ sub initMatrix {
 			main::DEBUGLOG && $log->is_debug && $log->debug('thisCustomTag = '.$thisCustomTag);
 
 			## register track info provider
-
 			my $songdetailsmenuenabled = $configmatrix->{$thisCustomTag}->{'songdetailsmenuenabled'};
 			my $songdetailsmenuname = $configmatrix->{$thisCustomTag}->{'songdetailsmenuname'};
 			my $songdetailsmenuposition = $configmatrix->{$thisCustomTag}->{'songdetailsmenuposition'};
 
+			# remove a menu entry registered earlier in case it got disabled in the meantime
+			Slim::Menu::TrackInfo->deregisterInfoProvider('CTI_TIHregID_'.$thisCustomTag);
 
 			if (defined $songdetailsmenuenabled && defined $songdetailsmenuname && defined $songdetailsmenuposition) {
-				my $regID = 'CTI_TIHregID_'.$thisCustomTag;
-				main::DEBUGLOG && $log->is_debug && $log->debug('trackinfohandler ID = '.$regID);
-				Slim::Menu::TrackInfo->deregisterInfoProvider($regID);
-
 				my %contextmenupositions = (
 					0 => [after => 'artwork'],
 					1 => [after => 'bottom'],
@@ -361,7 +428,7 @@ sub initMatrix {
 					$log->error("Invalid songdetailsmenuposition: $songdetailsmenuposition");
 					next;
 				}
-				Slim::Menu::TrackInfo->registerInfoProvider($regID => (
+				Slim::Menu::TrackInfo->registerInfoProvider('CTI_TIHregID_'.$thisCustomTag => (
 					@{$contextmenupositions{$songdetailsmenuposition}},
 					func => sub {
 						return getTrackInfo(@_, $thisCustomTag);
@@ -419,7 +486,7 @@ sub getTrackInfo {
 }
 
 sub getCustomTagValuesForTrack {
-	my ($customtag, $track, $infohandlerCaller) = @_;
+	my ($customtag, $track) = @_;
 	main::DEBUGLOG && $log->is_debug && $log->debug('getting CTI values for custom tag = '.$customtag);
 	my $result = '';
 
@@ -499,11 +566,7 @@ sub addTitleFormat {
 	my $titleformat = shift;
 	my $titleFormats = $serverPrefs->get('titleFormat');
 
-	foreach my $format (@{$titleFormats}) {
-		if ($titleformat eq $format) {
-			return;
-		}
-	}
+	return if grep { $_ eq $titleformat } @{$titleFormats};
 	main::DEBUGLOG && $log->is_debug && $log->debug("Adding to server title format list: $titleformat");
 	push @{$titleFormats}, $titleformat;
 	$serverPrefs->set('titleFormat', $titleFormats);

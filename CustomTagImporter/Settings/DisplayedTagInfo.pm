@@ -14,8 +14,6 @@ use base qw(Plugins::CustomTagImporter::Settings::BaseSettings);
 
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
-use Slim::Utils::Misc;
-use Slim::Utils::Strings;
 use Plugins::CustomTagImporter::Common ':all';
 
 my $prefs = preferences('plugin.customtagimporter');
@@ -48,15 +46,14 @@ sub prefs {
 
 sub handler {
 	my ($class, $client, $paramRef) = @_;
-	my $result = undef;
-	my $maxItemNum = 60;
+	my $availableCustomTags = Plugins::CustomTagImporter::Plugin::getAvailableCustomTags();
 
 	# Save buttons config
 	if ($paramRef->{saveSettings}) {
 		my %configmatrix;
-		my %searchstringDone;
 
-		for (my $n = 0; $n <= $maxItemNum; $n++) {
+		# the settings page lists one row (1..n) per available custom tag
+		for my $n (1 .. scalar keys %{$availableCustomTags}) {
 			my $songdetailsmenuenabled = $paramRef->{"pref_songdetailsmenuenabled_$n"} // undef;
 			my $titleformatenabled = $paramRef->{"pref_titleformatenabled_$n"} // undef;
 			next if (!$songdetailsmenuenabled && !$titleformatenabled);
@@ -77,16 +74,11 @@ sub handler {
 			};
 		}
 		$prefs->set('customtagconfigmatrix', \%configmatrix);
-		$paramRef->{'customtagconfigmatrix'} = \%configmatrix;
 		main::DEBUGLOG && $log->is_debug && $log->debug('SAVED VALUES = '.Data::Dump::dump(\%configmatrix));
-
-		$result = $class->SUPER::handler($client, $paramRef);
 	}
 
 	### push to settings page
-	my $availableCustomTags = Plugins::CustomTagImporter::Plugin::getAvailableCustomTags();
 	main::DEBUGLOG && $log->is_debug && $log->debug('available custom tags = '.Data::Dump::dump($availableCustomTags));
-
 
 	my $configmatrix = $prefs->get('customtagconfigmatrix');
 	my @webconfiglist = ();
@@ -106,13 +98,7 @@ sub handler {
 	$paramRef->{itemcount} = scalar @webconfiglist;
 	main::DEBUGLOG && $log->is_debug && $log->debug('page list = '.Data::Dump::dump($paramRef->{'customtagconfigmatrix'}));
 
-	$result = $class->SUPER::handler($client, $paramRef);
-
-	return $result;
-}
-
-sub is_integer {
-	defined $_[0] && $_[0] =~ /^[+-]?\d+$/;
+	return $class->SUPER::handler($client, $paramRef);
 }
 
 1;

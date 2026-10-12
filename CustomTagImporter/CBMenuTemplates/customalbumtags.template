@@ -36,7 +36,7 @@
 				<name>Sort by artist</name>
 				<menulinks>number</menulinks>
 				<menudata>
-					select albums.id,if(albums.compilation,' ','(' || group_concat(distinct contributors.name) || ')'),substr(albums.titlesort,1,1) from albums,tracks,customtagimporter_track_attributes,contributor_track,contributors[% IF library or activelibrary %],multilibrary_track[% END %]
+					select albums.id,case when albums.compilation then ' ' else '(' || group_concat(distinct contributors.name) || ')' end,substr(albums.titlesort,1,1) from albums,tracks,customtagimporter_track_attributes,contributor_track,contributors[% IF library or activelibrary %],multilibrary_track[% END %]
 					where
 						[%- IF library or activelibrary %]
 						tracks.id=multilibrary_track.track and
@@ -56,7 +56,7 @@
 				<jivepattern>^(.*)\s\((.*)\)$</jivepattern>
 			<menudata>
 				[%- IF showartistwithalbum %]
-				select albums.id,if(albums.compilation,' ','(' || group_concat(distinct contributors.name) || ')'),substr(albums.titlesort,1,1) from albums,tracks,customtagimporter_track_attributes,contributor_track,contributors[% IF library or activelibrary %],multilibrary_track[% END %]
+				select albums.id,case when albums.compilation then ' ' else '(' || group_concat(distinct contributors.name) || ')' end,substr(albums.titlesort,1,1) from albums,tracks,customtagimporter_track_attributes,contributor_track,contributors[% IF library or activelibrary %],multilibrary_track[% END %]
 				where
 					[%- IF library or activelibrary %]
 					tracks.id=multilibrary_track.track and

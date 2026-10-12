@@ -82,7 +82,7 @@
 				<menutype>sql</menutype>
 				<menulinks>alpha</menulinks>
 				<menudata>
-					select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value || '/'),
+					select customtagimporter_track_attributes.value,customtagimporter_track_attributes.value || '/',
 						[%- IF customsorttag %]
 						[%- IF customtagartistsort %]
 						substr(ifnull(contributors.namesort,ifnull(attr2.value,ifnull(customtagimporter_track_attributes.valuesort,customtagimporter_track_attributes.value))),1,1)

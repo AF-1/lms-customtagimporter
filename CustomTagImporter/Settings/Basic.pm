@@ -11,12 +11,8 @@ use warnings;
 use utf8;
 use base qw(Plugins::CustomTagImporter::Settings::BaseSettings);
 
-use File::Basename;
-use File::Next;
-
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
-use Slim::Utils::Misc;
 use Plugins::CustomTagImporter::Common ':all';
 
 my $prefs = preferences('plugin.customtagimporter');
@@ -50,35 +46,24 @@ sub prefs {
 sub handler {
 	my ($class, $client, $paramRef) = @_;
 	my $result;
-	my $callHandler = 1;
+
 	if ($paramRef->{'saveSettings'}) {
 		$paramRef->{'pref_customtags'} = trim_leadtail($paramRef->{'pref_customtags'}) if $paramRef->{'pref_customtags'};
 		$paramRef->{'pref_ratingtags'} = trim_leadtail($paramRef->{'pref_ratingtags'}) if $paramRef->{'pref_ratingtags'};
+		$result = $class->SUPER::handler($client, $paramRef);
+	}
 
-		$result = $class->SUPER::handler($client, $paramRef);
-		$callHandler = 0;
-	}
-	if ($paramRef->{'rescan'}) {
-		if ($callHandler) {
-			$paramRef->{'saveSettings'} = 1;
-			$result = $class->SUPER::handler($client, $paramRef);
-		}
-		Plugins::CustomTagImporter::Common::rescan();
-	} elsif ($paramRef->{'abortscan'}) {
-		if ($callHandler) {
-			$paramRef->{'saveSettings'} = 1;
-			$result = $class->SUPER::handler($client, $paramRef);
-		}
-		Plugins::CustomTagImporter::Common::abortScan();
-	} elsif ($paramRef->{'resetratingsto_ctivalues'}) {
-		if ($callHandler) {
-			$paramRef->{'saveSettings'} = 1;
-			$result = $class->SUPER::handler($client, $paramRef);
-		}
-		Plugins::CustomTagImporter::Common::resetRatingsToCTIvalues();
-	} elsif ($callHandler) {
+	my $action = $paramRef->{'rescan'} ? \&Plugins::CustomTagImporter::Common::rescan
+		: $paramRef->{'abortscan'} ? \&Plugins::CustomTagImporter::Common::abortScan
+		: $paramRef->{'resetratingsto_ctivalues'} ? \&Plugins::CustomTagImporter::Common::resetRatingsToCTIvalues
+		: undef;
+
+	# if a button was pressed without saving first, save the settings now. Otherwise just show the page.
+	if (!$paramRef->{'saveSettings'}) {
+		$paramRef->{'saveSettings'} = 1 if $action;
 		$result = $class->SUPER::handler($client, $paramRef);
 	}
+	$action->() if $action;
 
 	return $result;
 }
@@ -88,13 +73,7 @@ sub beforeRender {
 	$paramRef->{'squeezebox_server_jsondatareq'} = '/jsonrpc.js';
 
 	# count tracks with rating tags and values > 0
-	my $ratedCTItrackCountSQL = "select count(*) from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0";
-	my $dbh = Slim::Schema->storage->dbh();
-	my $sth = $dbh->prepare($ratedCTItrackCountSQL);
-	$sth->execute();
-	my $ratedCTItrackCount = $sth->fetchrow || 0;
-	$sth->finish();
-	$paramRef->{'ratedtrackcount'} = $ratedCTItrackCount;
+	$paramRef->{'ratedtrackcount'} = Slim::Schema->storage->dbh()->selectrow_array("select count(*) from customtagimporter_track_attributes where type = 'rating' and ifnull(value, 0) > 0") || 0;
 
 	# disable manual rating if active LMS scan
 	$paramRef->{'activelmsscan'} = 1 if (!Slim::Schema::hasLibrary() || Slim::Music::Import->stillScanning);

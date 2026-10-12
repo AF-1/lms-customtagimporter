@@ -6,7 +6,7 @@
 [% PROCESS plugins/CustomTagImporter/settings/subpage_chooser.html %]
 
 	<div class="statusmsgwrapper">
-		<p id="statusmsg" class="status"></p>
+		<p id="statusmsg" class="status" data-scanning="[% 'PLUGIN_CUSTOMTAGIMPORTER_SCANSTATUS_SCANNING' | string | html %]" data-done="[% 'PLUGIN_CUSTOMTAGIMPORTER_SCANSTATUS_SUCCESS' | string | html %]" data-aborted="[% 'PLUGIN_CUSTOMTAGIMPORTER_SCANSTATUS_ABORTED' | string | html %]" data-errors="[% 'PLUGIN_CUSTOMTAGIMPORTER_SCANSTATUS_ERRORS' | string | html %]" data-notags="[% 'PLUGIN_CUSTOMTAGIMPORTER_SCANSTATUS_NOTAGS' | string | html %]"></p>
 	</div>
 	<div id="scanProgressPercentageWrapper">
 		<div id="scanProgressPercentageBar"></div>
@@ -15,22 +15,22 @@
 
 [% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS" desc="" %]
 	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGSTOSCAN" desc="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGSTOSCAN_DESC" %]
-		<input class="inputfield" type="text" class="stdedit" name="pref_customtags" id="customtags" value="[% prefs.customtags %]" size="50">
+		<input class="inputfield stdedit" type="text" name="pref_customtags" id="customtags" value="[% prefs.customtags | html %]" size="50">
 	[% END %]
 	<br>
 
 	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_SINGLECUSTOMTAGS" desc="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_SINGLECUSTOMTAGS_DESC" %]
-		<input class="inputfield" type="text" class="stdedit" name="pref_singlecustomtags" id="singlecustomtags" value="[% prefs.singlecustomtags %]" size="50">
+		<input class="inputfield stdedit" type="text" name="pref_singlecustomtags" id="singlecustomtags" value="[% prefs.singlecustomtags | html %]" size="50">
 	[% END %]
 	<br>
 
 	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGMAPPING" desc="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_TAGMAPPING_DESC" %]
-		<input class="inputfield" type="text" class="stdedit" name="pref_customtagsmapping" id="customtagsmapping" value="[% prefs.customtagsmapping %]" size="60">
+		<input class="inputfield stdedit" type="text" name="pref_customtagsmapping" id="customtagsmapping" value="[% prefs.customtagsmapping | html %]" size="60">
 	[% END %]
 	<br>
 
 	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_SORTTAGMAPPING" desc="PLUGIN_CUSTOMTAGIMPORTER_CUSTOMTAGS_SORTTAGMAPPING_DESC" %]
-		<input class="inputfield" type="text" class="stdedit" name="pref_customsorttags" id="customsorttags" value="[% prefs.customsorttags %]" size="60">
+		<input class="inputfield stdedit" type="text" name="pref_customsorttags" id="customsorttags" value="[% prefs.customsorttags | html %]" size="60">
 	[% END %]
 	<br>
 
@@ -56,7 +56,7 @@
 
 [% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS" desc="" %]
 	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_TAGSTOSCAN" desc="PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_TAGSTOSCAN_DESC" %]
-		<input class="inputfield" type="text" class="stdedit" name="pref_ratingtags" id="ratingtags" value="[% prefs.ratingtags %]" size="40">
+		<input class="inputfield stdedit" type="text" name="pref_ratingtags" id="ratingtags" value="[% prefs.ratingtags | html %]" size="40">
 	[% END %]
 	<br>
 
@@ -86,8 +86,8 @@
 	<br>
 
 	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_SCANNING" desc="PLUGIN_CUSTOMTAGIMPORTER_SCANNING_DESC" %]
-		<input class="btn" id="scan" name="rescan" type="submit" class="stdclick" value="[% "PLUGIN_CUSTOMTAGIMPORTER_SCANNING_SCAN_BUTTON" | string %]"[% IF activelmsscan || activectiscan %] disabled[% END %]><input class="btn btn2" id="abort" name="abortscan" type="submit" class="stdclick" value="[% "PLUGIN_CUSTOMTAGIMPORTER_SCANNING_ABORT_BUTTON" | string %]"[% IF activelmsscan || activectiscan %] disabled[% END %]>
-		<input class="btn btn3[% IF ratedtrackcount %] hide[% END %]" id="reset" name="resetratingsto_ctivalues" type="submit" class="stdclick" onclick="inprogress('resetratingstoctivalues_status');" value="[% "PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_RESETLMSDBTOCTIVALUES" | string %]"[% IF activelmsscan || activectiscan %] disabled[% END %]>
+		<input class="btn stdclick" id="scan" name="rescan" type="submit" value="[% "PLUGIN_CUSTOMTAGIMPORTER_SCANNING_SCAN_BUTTON" | string %]"[% IF activelmsscan || activectiscan %] disabled[% END %]><input class="btn stdclick btn2" id="abort" name="abortscan" type="submit" value="[% "PLUGIN_CUSTOMTAGIMPORTER_SCANNING_ABORT_BUTTON" | string %]"[% IF activelmsscan || activectiscan %] disabled[% END %]>
+		<input class="btn stdclick btn3[% IF ratedtrackcount %] hide[% END %]" id="reset" name="resetratingsto_ctivalues" type="submit" onclick="inprogress('resetratingstoctivalues_status');" value="[% "PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_RESETLMSDBTOCTIVALUES" | string %]"[% IF activelmsscan || activectiscan %] disabled[% END %]>
 		<span class='hide' id='resetratingstoctivalues_status'>[% "PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_RESETLMSDBTOCTIVALUES_INPROGRESS" | string %]</span>
 	[% END %]
 <br><br>
@@ -167,7 +167,7 @@
 					console.log('CTI scan in progress');
 					document.getElementById('scan').disabled = true;
 					document.getElementById('reset').disabled = true;
-					document.getElementById('statusmsg').innerHTML = 'Scanning';
+					document.getElementById('statusmsg').textContent = document.getElementById('statusmsg').dataset.scanning;
 					document.getElementById('statusmsg').classList.remove('success');
 					document.getElementById('statusmsg').classList.add('scanstatus');
 					document.getElementById('scanProgressPercentageWrapper').style.display = 'block';
@@ -177,19 +177,19 @@
 				if (Object.values(jsonData.result)[0] == 1) {
 					console.log('CTI scan completed - success');
 					document.getElementById('statusmsg').classList.add('success');
-					document.getElementById('statusmsg').innerHTML = 'Scan completed - success';
+					document.getElementById('statusmsg').textContent = document.getElementById('statusmsg').dataset.done;
 					setTimeout(getPrefVal, 3000, 'scanResult', '0');
 				} else if (Object.values(jsonData.result)[0] == 2) {
 					console.log('CTI scan aborted');
-					document.getElementById('statusmsg').innerHTML = 'Scan aborted';
+					document.getElementById('statusmsg').textContent = document.getElementById('statusmsg').dataset.aborted;
 					setTimeout(getPrefVal, 3000, 'scanResult', '0');
 				} else if (Object.values(jsonData.result)[0] == 3) {
 					console.log('CTI scan completed with errors');
-					document.getElementById('statusmsg').innerHTML = 'Scan completed with errors. Check server log for details.';
+					document.getElementById('statusmsg').textContent = document.getElementById('statusmsg').dataset.errors;
 					setTimeout(getPrefVal, 3000, 'scanResult', '0');
 				} else if (Object.values(jsonData.result)[0] == 4) {
 					console.log('CTI scan not possible - no tags specified');
-					document.getElementById('statusmsg').innerHTML = 'Cannot scan - no tags specified to search for.';
+					document.getElementById('statusmsg').textContent = document.getElementById('statusmsg').dataset.notags;
 					setTimeout(getPrefVal, 3000, 'scanResult', '0');
 				}
 			} else if (prefName == 'scanprogresspercentage') {

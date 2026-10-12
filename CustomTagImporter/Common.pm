@@ -12,9 +12,8 @@ use utf8;
 
 use Slim::Utils::Prefs;
 use Slim::Utils::Misc;
-use Slim::Utils::Strings qw(string);
 use Slim::Utils::Log;
-use File::Spec::Functions qw(:ALL);
+use File::Spec::Functions qw(catfile);
 use Plugins::CustomTagImporter::MP3::Info;
 use POSIX qw(floor);
 use Time::HiRes qw(time);
@@ -30,7 +29,7 @@ my %dumpedTagNames;
 
 use base 'Exporter';
 our %EXPORT_TAGS = (
-	all => [qw(initDatabase rescan abortScan isScanning countAvailableCustomTags quoteValue trim_leadtail trim_all)],
+	all => [qw(initDatabase rescan abortScan isScanning trim_leadtail trim_all)],
 );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{all} } );
 
@@ -157,22 +156,8 @@ my %rawTagNames = (
 );
 
 sub initDatabase {
-	my $class = shift;
-
-	my $dbh = Slim::Schema->dbh;
-	my $sth = $dbh->table_info();
-	my $tableExists;
-	eval {
-		while (my ($qual, $owner, $table, $type) = $sth->fetchrow_array()) {
-			if ($table eq 'customtagimporter_track_attributes') {
-				$tableExists = 1;
-			}
-		}
-	};
-	if ($@) {
-		$log->error("Database error: $@");
-	}
-	$sth->finish();
+	my ($tableExists) = eval { Slim::Schema->dbh->selectrow_array("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'customtagimporter_track_attributes'") };
+	$log->error("Database error: $@") if $@;
 	main::DEBUGLOG && $log->is_debug && $log->debug($tableExists ? 'CTI table found.' : 'No CTI table found.');
 
 	unless ($tableExists) {
@@ -189,7 +174,6 @@ valuesort varchar(255)
 
 create index if not exists track_attr_cstrackidx on customtagimporter_track_attributes (track, type, attr);
 create index if not exists urlmd5_cstrackidx on customtagimporter_track_attributes (urlmd5);
-create index if not exists urlIndex on customtagimporter_track_attributes (url(255));
 create index if not exists type_attr_value_idx on customtagimporter_track_attributes (type, attr, value);
 create index if not exists type_attr_valuesort_idx on customtagimporter_track_attributes (type, attr, valuesort);
 create index if not exists attr_type_idx on customtagimporter_track_attributes (attr, type);
@@ -201,11 +185,11 @@ create index if not exists track_attr_value_cstrackidx on customtagimporter_trac
 }
 
 sub executeSQLstat {
-	my $statement = shift;
 	my $dbh = Slim::Schema->dbh;
+	my $statement = '';
 	my $inStatement = 0;
 
-	for my $line (split(/[\n\r]/, $statement)) {
+	for my $line (split(/[\n\r]/, $_[0])) {
 		# skip empty lines
 		$line =~ s/^\s*//;
 		next if $line =~ /^\s*$/;
@@ -230,7 +214,7 @@ sub executeSQLstat {
 }
 
 sub rescan {
-	my $importerCall = shift;
+	my ($importerCall, $folderUrl) = @_;
 	main::DEBUGLOG && $log->is_debug && $log->debug('Starting rescan');
 
 	if (!$importerCall && $prefs->get('scanningInProgress')) {
@@ -251,22 +235,34 @@ sub rescan {
 	$scanningAborted = 0;
 	$errors = 0;
 
-	initTrackScan($importerCall);
+	initTrackScan($importerCall, $folderUrl);
 
 	return;
 }
 
 sub initTrackScan {
-	my $importerCall = shift;
-	my $scanningContext = {'scanStartTime' => time()};
-	clearDBtable();
-
+	my ($importerCall, $folderUrl) = @_;
+	my $scanningContext = {'scanStartTime' => time(), 'folderUrl' => $folderUrl};
 	my $dbh = Slim::Schema->dbh;
+
+	if ($folderUrl) {
+		# partial scan: only replace the rows of the tracks in this folder, keep the rest of the table
+		main::DEBUGLOG && $log->is_debug && $log->debug('Partial scan of folder: '.$folderUrl);
+		eval {
+			$dbh->do("DELETE FROM customtagimporter_track_attributes WHERE substr(url, 1, ?) = ?", undef, length($folderUrl), $folderUrl);
+		};
+		if ($@) {
+			$log->error("Database error: $@");
+			$errors++;
+		}
+	} else {
+		clearDBtable();
+	}
 
 	# get track ids
 	@libraryTrackIDs = ();
-	my $sth = $dbh->prepare("SELECT tracks.id from tracks where tracks.audio = 1 and tracks.remote = 0 and tracks.content_type != 'cpl' and tracks.content_type != 'src' and tracks.content_type != 'ssp' and tracks.content_type != 'dir' and tracks.content_type is not null group by tracks.id order by tracks.id asc");
-	$sth->execute();
+	my $sth = $dbh->prepare("SELECT tracks.id from tracks where tracks.audio = 1 and tracks.remote = 0 and tracks.content_type != 'cpl' and tracks.content_type != 'src' and tracks.content_type != 'ssp' and tracks.content_type != 'dir' and tracks.content_type is not null".($folderUrl ? " and substr(tracks.url, 1, ?) = ?" : '')." group by tracks.id order by tracks.id asc");
+	$sth->execute($folderUrl ? (length($folderUrl), $folderUrl) : ());
 	my $id;
 	$sth->bind_col(1, \$id);
 	while ($sth->fetch()) {
@@ -346,9 +342,14 @@ sub getScanTrackAttributes {
 
 	if (defined($trackID)) {
 		my $track = Slim::Schema->rs('Track')->find($trackID);
-		my $dbh = Slim::Schema->dbh;
 		main::DEBUGLOG && $log->is_debug && $log->debug('Scanning track '.$scanningContext->{'currentTrackNo'}.' of '.$scanningContext->{'noOfTracks'});
-		main::DEBUGLOG && $log->is_debug && $log->debug('Scanning track: '.$track->title);
+
+		# track may have been removed from the LMS database in the meantime
+		if (!$track) {
+			main::DEBUGLOG && $log->is_debug && $log->debug('Track ID '.$trackID.' does not exist anymore, skipping');
+			$scanningContext->{'currentTrackNo'}++;
+			return;
+		}
 
 		my $attributes;
 		eval { $attributes = scanCustomTagTrack($track, $scanningContext); };
@@ -359,34 +360,18 @@ sub getScanTrackAttributes {
 		}
 
 		if ($attributes && scalar(@{$attributes}) > 0) {
+			my $sth = Slim::Schema->dbh->prepare("INSERT INTO customtagimporter_track_attributes (track, url, urlmd5, type, attr, value, valuesort) VALUES (?, ?, ?, ?, ?, ?, ?)");
 			for my $attribute (@{$attributes}) {
-				my $sth = $dbh->prepare("INSERT INTO customtagimporter_track_attributes (track, url, urlmd5, type, attr, value, valuesort) VALUES (?, ?, ?, ?, ?, ?, ?)");
 				eval {
-					$sth->bind_param(1, $track->id);
-					$sth->bind_param(2, $track->url);
-					$sth->bind_param(3, $track->urlmd5);
-					if ($attribute->{'name'} eq 'RATING') {
-						$sth->bind_param(4, 'rating');
-					} else {
-						$sth->bind_param(4, 'customtag');
-					}
-
-					$sth->bind_param(5, $attribute->{'name'});
-					$sth->bind_param(6, $attribute->{'value'});
-					if (defined($attribute->{'valuesort'})) {
-						$attribute->{'valuesort'} = Slim::Utils::Text::ignoreCaseArticles($attribute->{'valuesort'});
-					} elsif (defined($attribute->{'value'})) {
-						$attribute->{'valuesort'} = Slim::Utils::Text::ignoreCaseArticles($attribute->{'value'});
-					}
-					$sth->bind_param(7, $attribute->{'valuesort'});
-					$sth->execute();
+					my $valuesort = defined($attribute->{'valuesort'}) ? $attribute->{'valuesort'} : $attribute->{'value'};
+					$sth->execute($track->id, $track->url, $track->urlmd5, ($attribute->{'name'} eq 'RATING' ? 'rating' : 'customtag'), $attribute->{'name'}, $attribute->{'value'}, defined($valuesort) ? Slim::Utils::Text::ignoreCaseArticles($valuesort) : undef);
 				};
 				if ($@) {
 					$log->error("Database error: $@");
 					$errors++;
 				}
-				$sth->finish();
 			}
+			$sth->finish();
 		}
 		$scanningContext->{'currentTrackNo'}++;
 
@@ -425,19 +410,15 @@ sub exitScan {
 	}
 
 	# optional: dump tag names to file
-	if (!$scanningContext->{'importerCall'} && $prefs->get('dumptagnames')) {
-		my $saveDir = $serverPrefs->get('playlistdir') || Slim::Utils::OSDetect::dirsFor('prefs');
-		my $filename = catfile($saveDir, 'CTI_TagNameDump.txt');
-		my $output = FileHandle->new($filename, '>:utf8') or do {
-				$log->error('could not open '.$filename.' for writing.');
-				return;
-			};
-		print $output "###  Custom Tag Importer - Tag Name Dump  ###\n###  Found these tag names:\n\n";
-
-		foreach my $key (sort keys %dumpedTagNames) {
-			print $output $key."\n";
+	if (!$scanningContext->{'importerCall'} && !$scanningContext->{'folderUrl'} && $prefs->get('dumptagnames')) {
+		my $filename = catfile($serverPrefs->get('playlistdir') || Slim::Utils::OSDetect::dirsFor('prefs'), 'CTI_TagNameDump.txt');
+		if (open(my $output, '>:utf8', $filename)) {
+			print $output "###  Custom Tag Importer - Tag Name Dump  ###\n###  Found these tag names:\n\n";
+			print $output $_."\n" foreach (sort keys %dumpedTagNames);
+			close $output;
+		} else {
+			$log->error('could not open '.$filename.' for writing.');
 		}
-		close $output;
 		%dumpedTagNames = ();
 	}
 
@@ -460,15 +441,10 @@ sub isScanning {
 }
 
 sub clearDBtable {
-	my $dbh = Slim::Schema->dbh;
 	my $startTime = time();
 
-	my $clearDBsql = "DROP TABLE customtagimporter_track_attributes";
-
 	eval {
-		my $sth = $dbh->prepare($clearDBsql);
-		$sth->execute();
-		$sth->finish();
+		Slim::Schema->dbh->do("DROP TABLE IF EXISTS customtagimporter_track_attributes");
 		initDatabase();
 		main::idleStreams();
 	};
@@ -581,15 +557,15 @@ sub scanCustomTagTrack {
 			my %virtualSingleTagsHash = ();
 			my @customTagsMappings = split(/,/, $customTagMappingProperty);
 			for my $customTagMapping (@customTagsMappings) {
-				$customTagMapping =~ s/\\COMMA/,/;
+				$customTagMapping =~ s/\\COMMA/,/g;
 				if ($customTagMapping =~ /^\s*.*?\s*=\s*(oneof|combine|as)\s+(.+)\s*$/) {
 					my @parts = split(/\|/, $2);
 					for my $part (@parts) {
-						if ($part =~ /^\s*([A-Z0-9_]+)\(.*$/) {
-							$virtualTagsHash{$1} = 1;
-							$virtualSingleTagsHash{$1} = 1;
-						} elsif ($part =~ /^\s*([A-Z0-9_]+)\s*$/) {
-							$virtualTagsHash{$1} = 1;
+						if ($part =~ /^\s*([A-Za-z0-9_]+)\(.*$/) {
+							$virtualTagsHash{uc($1)} = 1;
+							$virtualSingleTagsHash{uc($1)} = 1;
+						} elsif ($part =~ /^\s*([A-Za-z0-9_]+)\s*$/) {
+							$virtualTagsHash{uc($1)} = 1;
 						}
 					}
 				}
@@ -598,8 +574,6 @@ sub scanCustomTagTrack {
 			for my $tag (keys %{$tags}) {
 				if ($ratingTagsString) {
 					if ($track->content_type() eq 'mp3') {
-						my $file = Slim::Utils::Misc::pathFromFileURL($track->url);
-						my $rawTags = MP3::Info::get_mp3tag($file, 2, 1);
 						if ($tag eq 'POPM' || $tag eq 'POP') {
 							# Ignore POP/M tag if we already got a rating value from another tag
 							if (scalar @result > 0) {
@@ -610,6 +584,7 @@ sub scanCustomTagTrack {
 								}
 							}
 
+							my $rawTags = MP3::Info::get_mp3tag(Slim::Utils::Misc::pathFromFileURL($track->url), 2, 1);
 							my @bytes = unpack "C*", $rawTags->{$tag};
 							my $email = 1;
 							my $rating = 0;
@@ -761,24 +736,23 @@ sub scanCustomTagTrack {
 			if (defined($customTagMappingProperty) && $customTagMappingProperty) {
 				my @customTagsMapping = split(/,/, $customTagMappingProperty);
 				for my $customTagMapping (@customTagsMapping) {
-					$customTagMapping =~ s/\\COMMA/,/;
+					$customTagMapping =~ s/\\COMMA/,/g;
 					# handle TAG = oneof ONETAG|ANOTHERTAG|ATHIRDTAG mappings
 					# handle TAG = combine ONETAG|ANOTHERTAG|ATHIRDTAG mappings
-					# handle YEAR = as DATE(exp = ^\d\d\d\d)
+					# handle YEAR = as DATE(exp = ^(\d\d\d\d))
 					# handle MONTH = combine DATE(exp = ^(\d\d\d\d))|DATE(exp = ^\d\d\d\d-(\d\d))
-					# handle DECADE = combine YEAR(exp = ^\d\d\d)|YEAR(text=0)
+					# handle DECADE = combine YEAR(exp = ^(\d\d\d))|YEAR(text=0)
 					# handle ARTISTSORT = combine ARTIST(exp = ^.*\s(.*)$)|ARTIST(text=)|ARTIST(exp = ^(.*)\s)
-					if ($customTagMapping =~ /^\s*(.*?)\s* = \s*(oneof|combine|as)\s+(.+)\s*$/) {
+					if ($customTagMapping =~ /^\s*(.*?)\s*=\s*(oneof|combine|as)\s+(.+)\s*$/) {
 						main::DEBUGLOG && $log->is_debug && $log->debug("Handling custom mapping: $customTagMapping");
 						my $mappingType = $2;
 						my @values = ();
 						my $tag = uc($1);
 						my @parts = split(/\|/, $3);
-						#main::DEBUGLOG && $log->is_debug && $log->debug("GOT: ".Data::Dump::dump(\@parts));
 						my $lastPart = 0;
 						for my $part (@parts) {
 							main::DEBUGLOG && $log->is_debug && $log->debug("Handling custom mapping part $part");
-							if ($part =~ /^\s*([A-Za-z0-9_\/ ]+)\(exp = (.*)\)\s*$/) {
+							if ($part =~ /^\s*([A-Za-z0-9_\/ ]+)\(exp\s*=\s*(.*)\)\s*$/) {
 								if (exists $resultHash->{uc($1)}) {
 									my $partTag = uc($1);
 									my $partExp = $2;
@@ -806,7 +780,7 @@ sub scanCustomTagTrack {
 													if (defined($orgValue)) {
 														push @values, $orgValue.$currentValue;
 													} elsif (scalar(@{$partTagValues}) != scalar(@values) && scalar(@values) > 0) {
-														map { $_ = $_.$currentValue } @values;
+														$_ .= $currentValue foreach @values;
 														last;
 													} elsif (scalar(@{$partTagValues}) != scalar(@values) && scalar(@values) == 0) {
 														for my $v (@{$partTagValues}) {
@@ -832,7 +806,7 @@ sub scanCustomTagTrack {
 												last;
 											} elsif ($mappingType eq "combine") {
 												if (scalar(@values) > 0) {
-													map { $_ = $_.$currentValue } @values;
+													$_ .= $currentValue foreach @values;
 												} else {
 													push @values, $currentValue;
 												}
@@ -849,7 +823,7 @@ sub scanCustomTagTrack {
 										last;
 									} elsif ($mappingType eq "combine") {
 										if (scalar(@values) > 0) {
-											map { $_ = $_.$currentValue } @values;
+											$_ .= $currentValue foreach @values;
 										} else {
 											push @values, $currentValue;
 										}
@@ -879,7 +853,7 @@ sub scanCustomTagTrack {
 												if (defined($orgValue)) {
 													push @values, $orgValue.$currentValue;
 												} elsif (scalar(@{$partTagValues}) != scalar(@values) && scalar(@values) > 0) {
-													map { $_ = $_.$currentValue } @values;
+													$_ .= $currentValue foreach @values;
 													last;
 												} elsif (scalar(@{$partTagValues}) != scalar(@values) && scalar(@values) == 0) {
 													@values = @{$partTagValues};
@@ -897,7 +871,7 @@ sub scanCustomTagTrack {
 											last;
 										} elsif ($mappingType eq "combine") {
 											if (scalar(@values) > 0) {
-												map { $_ = $_.$currentValue } @values;
+												$_ .= $currentValue foreach @values;
 											} else {
 												push @values, $currentValue;
 											}
@@ -909,7 +883,6 @@ sub scanCustomTagTrack {
 								last;
 							}
 						}
-						#main::DEBUGLOG && $log->is_debug && $log->debug("Got mapping tags: ".Data::Dump::dump(\@values));
 
 						if (scalar(@values) > 0) {
 							if (scalar(@values) == 1) {
@@ -988,12 +961,14 @@ sub rateScannedTracks {
 	my $dbh = Slim::Schema->dbh;
 	my $ratingHistoryColumnsExist = _ratingHistoryColumnsExist($dbh);
 
-	### get rated CTI tracks (and their rating values)
-	my $sqlGetRatedCTItracks = "select customtagimporter_track_attributes.urlmd5, customtagimporter_track_attributes.value from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0";
+	# partial scan: limit everything to the tracks of the scanned folder
+	my $folderUrl = $scanningContext->{'folderUrl'};
+	my @folderParams = $folderUrl ? (length($folderUrl), $folderUrl) : ();
 
+	### get rated CTI tracks (and their rating values)
 	my %ratedCTItracks = ();
-	my $sth = $dbh->prepare($sqlGetRatedCTItracks);
-	$sth->execute();
+	my $sth = $dbh->prepare("select customtagimporter_track_attributes.urlmd5, customtagimporter_track_attributes.value from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0".($folderUrl ? " and substr(customtagimporter_track_attributes.url, 1, ?) = ?" : ''));
+	$sth->execute(@folderParams);
 	my ($urlmd5, $CTIratingValue);
 	$sth->bind_col(1, \$urlmd5);
 	$sth->bind_col(2, \$CTIratingValue);
@@ -1003,7 +978,8 @@ sub rateScannedTracks {
 	$sth->finish();
 	main::DEBUGLOG && $log->is_debug && $log->debug('Pt 1: Getting rated CTI tracks and rating values took '.(time() - $started).' seconds.');
 
-	if (scalar keys %ratedCTItracks == 0) {
+	# a partial scan only stops here if the whole CTI table has no rated tracks (same safeguard as for a complete scan)
+	if (scalar keys %ratedCTItracks == 0 && (!$folderUrl || !$dbh->selectrow_array("SELECT 1 FROM customtagimporter_track_attributes WHERE type = 'rating' AND ifnull(value, 0) > 0 LIMIT 1"))) {
 		main::INFOLOG && $log->is_info && $log->info('CTI table does not contain tracks with rating tags!');
 		return;
 	}
@@ -1011,11 +987,9 @@ sub rateScannedTracks {
 	### unrate tracks in LMS db
 	$started = time();
 	my $unrateRatingTime = int(time());
-my $unrate_sth = $ratingHistoryColumnsExist
-		? $dbh->prepare("UPDATE tracks_persistent SET rating = 0, lastRated = ?, prevRating = tracks_persistent.rating WHERE tracks_persistent.rating > 0 AND tracks_persistent.urlmd5 NOT IN (select customtagimporter_track_attributes.urlmd5 from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0)")
-		: $dbh->prepare("UPDATE tracks_persistent SET rating = 0 WHERE tracks_persistent.rating > 0 AND tracks_persistent.urlmd5 NOT IN (select customtagimporter_track_attributes.urlmd5 from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0)");
+	my $unrate_sth = $dbh->prepare("UPDATE tracks_persistent SET rating = 0".($ratingHistoryColumnsExist ? ", lastRated = ?, prevRating = tracks_persistent.rating" : '')." WHERE tracks_persistent.rating > 0 AND tracks_persistent.urlmd5 NOT IN (select customtagimporter_track_attributes.urlmd5 from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0)".($folderUrl ? " AND tracks_persistent.urlmd5 IN (SELECT tracks.urlmd5 FROM tracks WHERE substr(tracks.url, 1, ?) = ?)" : ''));
 	eval {
-		$ratingHistoryColumnsExist ? $unrate_sth->execute($unrateRatingTime) : $unrate_sth->execute();
+		$unrate_sth->execute(($ratingHistoryColumnsExist ? $unrateRatingTime : ()), @folderParams);
 	};
 	if ($@) {
 		$log->error("Database error: $@");
@@ -1060,7 +1034,7 @@ my $unrate_sth = $ratingHistoryColumnsExist
 		main::INFOLOG && $log->is_info && $log->info('Writing CTI rating values to LMS database took '.(time() - $totalTimeStarted).' seconds.');
 	}
 
-	Plugins::RatingsLight::Plugin::refreshAll(1) if !$scanningContext->{'importerCall'} && $RLenabled;
+	Plugins::RatingsLight::Plugin::refreshAll() if !$scanningContext->{'importerCall'} && $RLenabled;
 }
 
 sub resetRatingsToCTIvalues {
@@ -1169,24 +1143,6 @@ sub getRawMP3Tags {
 			main::DEBUGLOG && $log->is_debug && $log->debug("Ignoring tag: $t");
 		}
 	}
-}
-
-sub countAvailableCustomTags {
-	my $dbh = Slim::Schema->dbh;
-	my $customTagSql = "select count(distinct attr) from customtagimporter_track_attributes where type='customtag' group by attr";
-	my $thisCount;
-	my $sth = $dbh->prepare($customTagSql);
-	$sth->execute();
-	$sth->bind_columns(undef, \$thisCount);
-	$sth->fetch();
-	$sth->finish;
-	return $thisCount;
-}
-
-sub quoteValue {
-	my $value = shift;
-	$value =~ s/\'/\'\'/g;
-	return $value;
 }
 
 sub trim_leadtail {

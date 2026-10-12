@@ -45,15 +45,15 @@
 	[% FOREACH thisconfig = customtagconfigmatrix; idx = loop.count %]
 	<tr>
 		<td>
-			[% thisconfig.customtag %]
-			<input type="hidden" name="pref_customtag_[% idx %]" id="customtag_[% idx %]" value="[% thisconfig.customtag %]">
+			[% thisconfig.customtag | html %]
+			<input type="hidden" name="pref_customtag_[% idx %]" id="customtag_[% idx %]" value="[% thisconfig.customtag | html %]">
 		</td>
 		<td></td>
 		<td>
 			<input name="pref_songdetailsmenuenabled_[% idx %]" id="songdetailsmenuenabled_[% idx %]" type="checkbox" [% IF thisconfig.songdetailsmenuenabled %] checked [% END %]>
 		</td>
 		<td>
-			<input type="text" class="stdedit" name="pref_songdetailsmenuname_[% idx %]" id="songdetailsmenuname_[% idx %]" value="[% thisconfig.songdetailsmenuname %]" autocomplete="off">
+			<input type="text" class="stdedit" name="pref_songdetailsmenuname_[% idx %]" id="songdetailsmenuname_[% idx %]" value="[% thisconfig.songdetailsmenuname | html %]" autocomplete="off">
 		</td>
 		<td>
 			<select name="pref_songdetailsmenuposition_[% idx %]" id="songdetailsmenuposition_[% idx %]">
@@ -69,7 +69,7 @@
 		</td>
 		<td></td>
 		<td>
-			<input name="pref_titleformatenabled_[% idx %]" id="titleformatenabled_[% idx %]" type="checkbox" [% IF thisconfig.titleformatenabled %] checked [% END %]">
+			<input name="pref_titleformatenabled_[% idx %]" id="titleformatenabled_[% idx %]" type="checkbox" [% IF thisconfig.titleformatenabled %] checked [% END %]>
 		</td>
 	</tr>
 	[% END %]

@@ -24,6 +24,8 @@ Custom Tag Importer
 
 * **Scan track information from custom tags in your music files** to a dedicated LMS database table.
 
+* (Re)scan **single** subfolders of the LMS **Music Folder** (via the folder's context menu)
+
 * **Scan rating values** from rating tags in your music files and use them **to set LMS track ratings**.
 
 * Includes a **list of available CTI custom tags and their values**.

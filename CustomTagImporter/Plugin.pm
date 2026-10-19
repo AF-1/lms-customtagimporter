@@ -529,7 +529,12 @@ sub getCustomTagValuesForTrack {
 sub getAvailableCustomTags {
 	my $dbh = Slim::Schema->dbh;
 	my %result = ();
-	my $sth = $dbh->prepare("SELECT attr FROM customtagimporter_track_attributes WHERE type = 'customtag' GROUP BY attr ORDER BY attr");
+	# loose index scan (one index seek per distinct attr) needs recursive CTEs = SQLite >= 3.8.3, otherwise plain GROUP BY
+	my ($sqliteVersion) = eval { $dbh->selectrow_array('SELECT sqlite_version()') };
+	my ($major, $minor, $patch) = split(/\./, $sqliteVersion || '0');
+	my $sth = $dbh->prepare(($major * 1000000 + ($minor || 0) * 1000 + ($patch || 0)) >= 3008003
+		? "WITH RECURSIVE t(attr) AS (SELECT MIN(attr) FROM customtagimporter_track_attributes WHERE type = 'customtag' UNION ALL SELECT (SELECT MIN(attr) FROM customtagimporter_track_attributes WHERE type = 'customtag' AND attr > t.attr) FROM t WHERE t.attr IS NOT NULL) SELECT attr FROM t WHERE attr IS NOT NULL"
+		: "SELECT attr FROM customtagimporter_track_attributes WHERE type = 'customtag' GROUP BY attr ORDER BY attr");
 	eval {
 		$sth->execute();
 		my $attr;

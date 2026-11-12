@@ -987,7 +987,7 @@ sub rateScannedTracks {
 	### unrate tracks in LMS db
 	$started = time();
 	my $unrateRatingTime = int(time());
-	my $unrate_sth = $dbh->prepare("UPDATE tracks_persistent SET rating = 0".($ratingHistoryColumnsExist ? ", lastRated = ?, prevRating = tracks_persistent.rating" : '')." WHERE tracks_persistent.rating > 0 AND tracks_persistent.urlmd5 NOT IN (select customtagimporter_track_attributes.urlmd5 from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0)".($folderUrl ? " AND tracks_persistent.urlmd5 IN (SELECT tracks.urlmd5 FROM tracks WHERE substr(tracks.url, 1, ?) = ?)" : ''));
+	my $unrate_sth = $dbh->prepare("UPDATE tracks_persistent SET rating = 0".($ratingHistoryColumnsExist ? ", lastRated = ?, prevRating = tracks_persistent.rating" : '')." WHERE tracks_persistent.rating > 0 AND tracks_persistent.urlmd5 NOT IN (select customtagimporter_track_attributes.urlmd5 from customtagimporter_track_attributes where customtagimporter_track_attributes.type = 'rating' and ifnull(customtagimporter_track_attributes.value, 0) > 0) AND tracks_persistent.url LIKE 'file://%'".($folderUrl ? " AND tracks_persistent.urlmd5 IN (SELECT tracks.urlmd5 FROM tracks WHERE substr(tracks.url, 1, ?) = ?)" : ''));
 	eval {
 		$unrate_sth->execute(($ratingHistoryColumnsExist ? $unrateRatingTime : ()), @folderParams);
 	};

@@ -83,13 +83,13 @@ PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_WRITETOLMSDB
 	EN	Use&nbsp;CTI&nbsp;rating&nbsp;values&nbsp;to set&nbsp;LMS&nbsp;track&nbsp;ratings
 
 PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_WRITETOLMSDB_DESC
-	EN	Previous LMS rating values will be <b>deleted and replaced</b> by CTI rating values.<br>If you're using the <i>Ratings Light</i> plugin, you may want to create a backup before starting the CTI scanning process. The scanned CTI rating values are also stored in the CTI database table.
+	EN	Previous LMS rating values of local tracks will be <b>deleted and replaced</b> by CTI rating values.<br>If you're using the <i>Ratings Light</i> plugin, you may want to create a backup before starting the CTI scanning process. The scanned CTI rating values are also stored in the CTI database table.
 
 PLUGIN_CUSTOMTAGIMPORTER_SCANNING
 	EN	Scan tags
 
 PLUGIN_CUSTOMTAGIMPORTER_SCANNING_DESC
-	EN	This deletes the current CTI database table and rescans <b>all</b> of your tracks for custom and rating tags. This may take a while depending on the size of your library.<br><br>The <b>Abort</b> button will cancel the current scanning process.<br><br>The <b>Reset ratings to CTI values</b> button will reset all LMS track ratings to the <b>current</b> <i>rating</i> tag values of the CTI database table - without the need for another rescan. If there are no CTI rating tag values, the button is not displayed.
+	EN	This deletes the current CTI database table and rescans <b>all</b> of your tracks for custom and rating tags. This may take a while depending on the size of your library.<br><br>The <b>Abort</b> button will cancel the current scanning process.<br><br>The <b>Reset local ratings to CTI values</b> button will reset the LMS ratings of all <b>local</b> tracks to the <b>current</b> <i>rating</i> tag values of the CTI database table - without the need for another rescan. Ratings of remote tracks are not affected. If there are no CTI rating tag values, the button is not displayed.
 
 PLUGIN_CUSTOMTAGIMPORTER_SCANNING_SCAN_BUTTON
 	EN	Scan now
@@ -98,7 +98,7 @@ PLUGIN_CUSTOMTAGIMPORTER_SCANNING_ABORT_BUTTON
 	EN	Abort
 
 PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_RESETLMSDBTOCTIVALUES
-	EN	Reset ratings to CTI values
+	EN	Reset local ratings to CTI values
 
 PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_RESETLMSDBTOCTIVALUES_INPROGRESS
 	EN	Resetting...

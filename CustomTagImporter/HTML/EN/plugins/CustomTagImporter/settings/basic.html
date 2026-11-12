@@ -87,7 +87,7 @@
 
 	[% WRAPPER setting title="PLUGIN_CUSTOMTAGIMPORTER_SCANNING" desc="PLUGIN_CUSTOMTAGIMPORTER_SCANNING_DESC" %]
 		<input class="btn stdclick" id="scan" name="rescan" type="submit" value="[% "PLUGIN_CUSTOMTAGIMPORTER_SCANNING_SCAN_BUTTON" | string %]"[% IF activelmsscan || activectiscan %] disabled[% END %]><input class="btn stdclick btn2" id="abort" name="abortscan" type="submit" value="[% "PLUGIN_CUSTOMTAGIMPORTER_SCANNING_ABORT_BUTTON" | string %]"[% IF activelmsscan || activectiscan %] disabled[% END %]>
-		<input class="btn stdclick btn3[% IF ratedtrackcount %] hide[% END %]" id="reset" name="resetratingsto_ctivalues" type="submit" onclick="inprogress('resetratingstoctivalues_status');" value="[% "PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_RESETLMSDBTOCTIVALUES" | string %]"[% IF activelmsscan || activectiscan %] disabled[% END %]>
+		<input class="btn stdclick btn3[% IF NOT ratedtrackcount %] hide[% END %]" id="reset" name="resetratingsto_ctivalues" type="submit" onclick="inprogress('resetratingstoctivalues_status');" value="[% "PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_RESETLMSDBTOCTIVALUES" | string %]"[% IF activelmsscan || activectiscan %] disabled[% END %]>
 		<span class='hide' id='resetratingstoctivalues_status'>[% "PLUGIN_CUSTOMTAGIMPORTER_RATINGTAGS_RESETLMSDBTOCTIVALUES_INPROGRESS" | string %]</span>
 	[% END %]
 <br><br>
